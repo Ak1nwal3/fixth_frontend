@@ -1,0 +1,222 @@
+﻿@import 'tailwindcss';
+@import './product.css';
+
+/*
+ * Global design tokens, taken from the Figma file
+ * (IwJvJoaJo4cWkIdIYuB5Bk, node 1640:157).
+ *
+ * Tailwind v4 reads these from the `@theme` block and exposes them as
+ * utilities (e.g. `bg-surface`, `text-brand`, `font-display`).
+ */
+@theme {
+  /* Brand */
+  --color-brand: #0f35db;
+  --color-brand-strong: #0c2aae;
+
+  /* Core palette */
+  --color-navy: #00002e;
+  --color-ink: #030303;
+  --color-cream: #f3f3f3;
+  --color-cyan: #bcf7fb;
+  --color-cyan-soft: #d5ffff;
+
+  /* Surfaces â€” the product is dark-first. */
+  --color-surface: #00002e;
+  --color-surface-elevated: #08083a;
+  --color-surface-muted: #0d0d4d;
+  --color-border: rgba(243, 243, 243, 0.18);
+  --color-content: #f3f3f3;
+  --color-content-muted: rgba(243, 243, 243, 0.62);
+  --color-content-faint: rgba(243, 243, 243, 0.1);
+
+  /*
+   * Onboarding & auth â€” the sign-up flow is light-first, unlike the dark
+   * marketing pages. Values taken from the onboarding reference screens.
+   */
+  --color-brand-soft: #eef2ff;
+  --color-brand-line: #c8d3ff;
+  --color-page: #f1f2f6;
+  --color-line: #e4e7ef;
+  --color-line-strong: #dde1ea;
+  --color-track: #d8dce7;
+  --color-note: #f3f4f8;
+  --color-ink-soft: #303544;
+  --color-muted: #626978;
+
+  --font-sans: 'Instrument Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Poppins', 'Instrument Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, Consolas, monospace;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-surface);
+    color: var(--color-content);
+    font-family: var(--font-sans);
+    font-weight: 400;
+    letter-spacing: -0.03em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-cyan);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+@layer components {
+  /*
+   * Hero bloom: a cyan-white hotspot at the top-left over a wide royal-blue
+   * wash that falls away to navy. Stands in for the exported glow artwork.
+   */
+  .glow-hero {
+    background:
+      radial-gradient(46% 38% at 14% -8%, var(--color-cyan-soft) 0%, rgba(213, 255, 255, 0) 62%),
+      radial-gradient(115% 58% at 50% -14%, #2a63f0 0%, var(--color-brand) 42%, rgba(0, 0, 46, 0) 78%),
+      var(--color-surface);
+  }
+
+  /* Faint blueprint grid used behind the CTA card. */
+  .card-grid {
+    background-image:
+      linear-gradient(to right, rgba(243, 243, 243, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(243, 243, 243, 0.05) 1px, transparent 1px);
+    background-size: 4rem 4rem;
+  }
+
+  /* Dashed cyan frame that brackets the royal-blue platform band. */
+  .frame-dashed {
+    border: 1px dashed var(--color-cyan-soft);
+  }
+
+  /* Frosted surface used by the hero search bar and chat bubbles. */
+  .surface-frost {
+    background-color: rgba(243, 243, 243, 0.2);
+    backdrop-filter: blur(10px);
+  }
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1.5rem, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@layer utilities {
+  /*
+   * Scroll-reveal as a progressive enhancement: browsers that support
+   * scroll-driven animations fade content in as it enters the viewport,
+   * everything else renders it normally.
+   */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .reveal {
+        animation: reveal-up both linear;
+        animation-timeline: view();
+        animation-range: entry 5% cover 28%;
+      }
+    }
+  }
+}
+
+/*
+ * Auth screens are full-bleed: the split fills the viewport edge to edge with
+ * no outer gutter, rounded card or page scrollbar. The form column owns any
+ * overflow so tall steps scroll inside the panel while the shell stays fixed.
+ */
+.auth-page { height: 100svh; overflow: hidden; background: white; color: var(--color-navy); color-scheme: light; }
+.auth-card { display: grid; grid-template-columns: minmax(280px, 36.111%) minmax(0, 1fr); height: 100%; background: white; }
+.auth-brand { position: relative; overflow: hidden; background: #2349de; }
+.auth-brand-image { width: 100%; height: 100%; position: absolute; object-fit: contain; }
+/*
+ * Exported brand artwork. `cover` fills the panel at any aspect ratio and the
+ * slight scale pushes the artwork's own rounded transparent corners outside
+ * the (square, full-bleed) panel so no notch shows.
+ */
+.auth-brand-artwork { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scale(1.06); }
+.auth-brand-logo { position: absolute; right: 32px; top: 28px; }
+.auth-story { position: absolute; bottom: 64px; left: 48px; right: 40px; color: white; }
+.auth-story p { text-transform: uppercase; font-size: 11px; font-weight: 600; letter-spacing: .06em; margin-bottom: 14px; }
+.auth-story h2 { font-family: var(--font-display); font-size: clamp(24px, 2.4vw, 36px); font-weight: 600; line-height: 1.25; overflow-wrap: break-word; }
+.auth-panel { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: white; }
+.auth-header { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 16px; padding: 24px 48px 0; }
+.auth-secondary-link { display: inline-flex; justify-content: center; align-items: center; border: 1px solid var(--color-brand-line); border-radius: 10px; padding: 10px 20px; font-size: 13px; font-weight: 600; color: var(--color-brand); background: var(--color-brand-soft); }
+.auth-content { flex: 1; min-height: 0; overflow-y: auto; display: flex; justify-content: center; padding: clamp(16px, 3vh, 40px) 48px 12px; }
+.onboarding-form { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 650px; margin: auto; flex-shrink: 0; }
+.onboarding-form h1 { font-family: var(--font-display); font-size: 24px; font-weight: 700; line-height: 1.2; }
+.onboarding-form > p { font-size: 13px; line-height: 1.5; color: var(--color-muted); }
+.onboarding-form > .auth-eyebrow { font-size: 12px; color: var(--color-brand); text-transform: uppercase; letter-spacing: .6px; font-weight: 600; }
+.auth-field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: var(--color-ink-soft); }
+.auth-field input, .auth-field select, .auth-field textarea { min-width: 0; width: 100%; min-height: 46px; padding: 11px 13px; border: 1px solid var(--color-line-strong); border-radius: 10px; background: white; color: var(--color-navy); font-size: 13px; font-weight: 500; }
+.auth-field textarea { min-height: 92px; resize: vertical; }
+.auth-page :focus-visible { outline: 2px solid var(--color-brand); outline-offset: 3px; }
+.auth-note { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; border-radius: 8px; padding: 10px; background: var(--color-note); font-size: 13px; line-height: 1.5; color: var(--color-muted); }
+.auth-actions { display: flex; justify-content: flex-end; align-items: center; gap: 16px; }
+.auth-actions > button { width: 210px; max-width: 100%; }
+.auth-back { display: inline-flex; gap: 7px; align-items: center; margin-right: auto; font-size: 13px; color: var(--color-muted); }
+.auth-footer { flex-shrink: 0; padding: 12px 48px; font-size: 10px; color: var(--color-muted); }
+.auth-code { font-size: 24px !important; letter-spacing: .5em; }
+.auth-text-link { font-size: 12px; color: var(--color-brand); text-align: center; }
+.auth-upload { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 16px; border: 1px dashed var(--color-brand-line); border-radius: 10px; font-size: 13px; }
+.auth-upload input { width: 100%; font-size: 12px; }
+.auth-skills { display: flex; flex-wrap: wrap; gap: 8px; }
+.auth-skills button { padding: 8px 12px; border: 1px solid var(--color-brand-line); border-radius: 8px; color: var(--color-brand); font-size: 13px; }
+.auth-skills button[aria-pressed=true] { background: var(--color-brand-soft); border-color: var(--color-brand); }
+.auth-review > div { display: grid; grid-template-columns: 100px minmax(0, 1fr) auto; gap: 12px; padding-block: 13px; border-bottom: 1px solid var(--color-line); font-size: 13px; }
+.auth-review dt { color: var(--color-muted); }
+.auth-review dd { overflow-wrap: anywhere; }
+.auth-review a { color: var(--color-brand); }
+@media (max-width: 900px) { .auth-card { grid-template-columns: minmax(0, 1fr); } .auth-brand { display: none; } .auth-header { padding: 24px 24px 0; } .auth-content { padding: 32px 24px 20px; } .auth-footer { padding: 20px 24px; } }
+@media (max-width: 480px) { .auth-header { padding-inline: 20px; } .auth-content { padding: 24px 20px 16px; } .auth-actions > button { flex: 1; } .auth-review > div { grid-template-columns: 80px minmax(0, 1fr) auto; gap: 8px; } }
+.auth-mobile-banner { display: none; }
+@media (max-width: 600px) {
+  .auth-page { background: var(--color-brand); }
+  .auth-card { display: flex; flex-direction: column; background: var(--color-brand); }
+  .auth-mobile-banner { position: relative; overflow: hidden; display: flex; flex-shrink: 0; align-items: flex-start; justify-content: space-between; min-height: 110px; padding: 14px; color: white; background: radial-gradient(circle 85px at 91% -4%, #6380ef 99%, transparent 100%); }
+  .auth-mobile-banner > a { position: relative; z-index: 1; }
+  .auth-mobile-banner > a + a { padding: 6px 8px; font-size: 12px; }
+  .auth-panel { flex: 1; min-height: 0; border-radius: 22px 22px 0 0; background: white; }
+  .auth-header { display: none; }
+  .auth-content { padding: 22px 16px; }
+  .auth-footer { padding: 20px 16px; }
+}
+
+.auth-skip { position:fixed; top:8px; left:8px; z-index:100; transform:translateY(-150%); background:white; color:var(--color-brand); padding:10px 16px; border:2px solid var(--color-brand); border-radius:8px; }
+.auth-skip:focus { transform:none; }
+.auth-otp { border:0; min-width:0; padding:0; }
+.auth-otp legend { font-size:13px; font-weight:600; margin-bottom:8px; color:var(--color-ink-soft); }
+.auth-otp>div { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:7px; }
+.auth-otp input { width:100%; min-width:0; height:48px; text-align:center; border:1px solid var(--color-line-strong); border-radius:8px; background:white; font-size:20px; color:var(--color-navy); }
+.auth-otp input[aria-invalid=true],.auth-field [aria-invalid=true] { border-color:#c83b4d; }
+.auth-field-error { color:#c83b4d; font-size:13px; }
+.auth-upload input { max-width:100%; }
+.auth-page picture { display:contents; }
+@media(max-width:900px) { .auth-field input,.auth-field select,.auth-field textarea { font-size:16px; } }
+@media(max-width:600px) { .onboarding-form { gap:10px; } .auth-otp>div { gap:6px; } .auth-actions { padding-top:4px; } }
+
+.auth-field-error:empty, .onboarding-form > [role=status]:empty { display:none; }
+/* Keep brand copy reachable when text is enlarged or the viewport is short. */
+.auth-brand { display:flex; flex-direction:column; gap:32px; min-height:0; padding:28px 32px 64px 48px; overflow-x:hidden; overflow-y:auto; }
+.auth-brand picture { display:block; position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+.auth-brand-logo { position:relative; top:auto; right:auto; align-self:flex-end; flex-shrink:0; }
+.auth-story { position:relative; inset:auto; margin-top:auto; margin-right:8px; flex-shrink:0; }
+.auth-brand-image { inset:0; }
+@media(max-width:900px) { .auth-brand { display:none; } }

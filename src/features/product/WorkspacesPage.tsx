@@ -1,0 +1,6 @@
+﻿import { Link } from 'react-router'
+import { GraduationCap, Building2, ShieldCheck, ArrowRight } from 'lucide-react'
+import { FixthWordmark } from '@/components/common/Logo'
+export default function WorkspacesPage() {
+  return <main className="workspace-picker"><div><Link to="/" aria-label="Fixth home"><FixthWordmark className="h-10 w-auto text-brand" /></Link><h1>Explore your Fixth workspace</h1><p>Browse the designed experiences with sample data. Actions are local to this browser session; this preview does not sign in to a real account.</p><div className="workspace-grid">{[{ title: 'Student', to: '/student/discover', icon: GraduationCap, description: 'Discover placements, build your profile, and track applications.' }, { title: 'Company', to: '/company/placements', icon: Building2, description: 'Create placements and review the right candidates.' }, { title: 'Trust & Safety', to: '/admin/verification', icon: ShieldCheck, description: 'Review verification requests, listings, and account safety.' }].map(({ title, to, icon: Icon, description }) => <Link key={to} to={to}><Icon aria-hidden size={30} /><h2>{title}</h2><p>{description}</p><span className="p-text-link">Open workspace <ArrowRight size={15} aria-hidden className="p-inline-icon" /></span></Link>)}</div><Link className="p-text-link" to="/">← Back to home</Link></div></main>
+}

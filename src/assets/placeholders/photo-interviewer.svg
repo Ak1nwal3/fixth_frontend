@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 150" width="120" height="150" role="img" aria-label="Placeholder photo of the interviewer">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#C7D2FE" />
+      <stop offset="1" stop-color="#4338CA" />
+    </linearGradient>
+  </defs>
+  <rect width="120" height="150" fill="url(#bg)" />
+  <circle cx="60" cy="58" r="24" fill="#fff" fill-opacity="0.9" />
+  <path d="M12 150c0-26.5 21.5-48 48-48s48 21.5 48 48z" fill="#fff" fill-opacity="0.9" />
+</svg>
