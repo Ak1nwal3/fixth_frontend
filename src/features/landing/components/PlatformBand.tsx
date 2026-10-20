@@ -1,8 +1,11 @@
-import { onePlatform } from '@/assets'
+import { platformFeatures } from '@/features/landing/data'
+
+import FeatureRow from './FeatureRow'
 
 /**
- * The royal-blue band: the section heading with the exported platform artwork
- * — placements, training and internships, top to bottom — sitting below it.
+ * The royal-blue band: the section heading followed by the three feature rows —
+ * placements, training and internships. Each row is rendered from real markup
+ * (rather than the exported flat image) so its call to action is a working link.
  */
 export default function PlatformBand() {
   return (
@@ -14,13 +17,11 @@ export default function PlatformBand() {
             One platform, every engineering opportunity.
           </h2>
 
-          <img
-            src={onePlatform}
-            alt="SIWES placements, industrial training and internships on the fixth platform"
-            width={820}
-            height={920}
-            className="mx-auto mt-20 w-full"
-          />
+          <div className="mt-20 flex flex-col gap-16 sm:gap-20">
+            {platformFeatures.map((feature, index) => (
+              <FeatureRow key={feature.id} feature={feature} flipped={index % 2 === 1} />
+            ))}
+          </div>
         </div>
       </div>
     </section>

@@ -6,10 +6,10 @@
  * to change.
  */
 import midSectionIllustration from './images/mid-section.svg'
+import internshipsMockupIllustration from './images/internships-mockup.png'
 import onboardingBrandPanel from './images/onboarding/brand-panel.png'
 import onboardingOrganizationEmailBrand from './images/onboarding/organization-email-brand.png'
 import onboardingStudentEmailBrand from './images/onboarding/student-email-brand.png'
-import onePlatformIllustration from './images/one-platform.png'
 import avatarJohnDoe from './placeholders/avatar-john-doe.svg'
 import avatarKateEting from './placeholders/avatar-kate-eting.svg'
 import avatarMatthewEjeo from './placeholders/avatar-matthew-ejeo.svg'
@@ -28,12 +28,11 @@ import photoInterviewer from './placeholders/photo-interviewer.svg'
 export const midSection = midSectionIllustration
 
 /**
- * The "platform" artwork under the heading "One platform, every engineering
- * opportunity." — the three feature rows (placements, training, internships)
- * exported from the design as one transparent PNG, so it drops onto the
- * royal-blue band.
+ * Internships mockup from the design: a recruiter/candidate chat over the navy
+ * panel grid, exported at the panel's native 380×240 so it drops straight into
+ * the feature frame.
  */
-export const onePlatform = onePlatformIllustration
+export const internshipsMockup = internshipsMockupIllustration
 
 export const avatars = {
   johnDoe: avatarJohnDoe,
