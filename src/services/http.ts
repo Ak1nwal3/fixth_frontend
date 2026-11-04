@@ -1,10 +1,16 @@
 /**
  * Thin `fetch` wrapper for the fixth API.
  *
- * Extend with auth headers, error normalisation, and interceptors as the API
- * surface grows. Prefer adding endpoint functions in `src/services/`.
+ * - Attaches `Authorization: Bearer <access>` when a session exists.
+ * - On `401`, rotates the token pair once via the role refresh endpoint and
+ *   retries the request a single time. If refresh fails the session is
+ *   cleared; optional-auth endpoints are then retried anonymously.
+ * - Parses error bodies into `ApiError.body` (`{detail}` or field errors).
+ * - Sends JSON by default; pass a `FormData` body for multipart requests
+ *   (the browser sets the multipart boundary — do not set it manually).
  */
-const BASE_URL = import.meta.env.VITE_API_URL ?? '/api'
+import { env } from '@/config/env'
+import { clearSession, emitSessionExpired, getSession, refreshSession } from '@/features/auth/session'
 
 export class ApiError extends Error {
   status: number
@@ -18,20 +24,54 @@ export class ApiError extends Error {
   }
 }
 
-export async function request<T>(
-  path: string,
-  init?: RequestInit,
-): Promise<T> {
-  const response = await fetch(`${BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...init?.headers,
-    },
-    ...init,
-  })
+export interface RequestOptions extends RequestInit {
+  /**
+   * 'required' (default): the call needs an authenticated session; a failed
+   * token refresh surfaces the 401. 'optional': public endpoint that returns
+   * extra fields for signed-in users; falls back to an anonymous retry.
+   * 'none': public auth endpoints — never attach tokens or refresh on 401.
+   */
+  auth?: 'required' | 'optional' | 'none'
+}
+
+async function send(path: string, init: RequestOptions, access: string | null): Promise<Response> {
+  const headers = new Headers(init.headers)
+  if (!(init.body instanceof FormData) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
+  }
+  if (access) headers.set('Authorization', `Bearer ${access}`)
+  const { auth: _auth, ...rest } = init
+  return fetch(`${env.apiUrl}${path}`, { ...rest, headers })
+}
+
+export async function request<T>(path: string, init: RequestOptions = {}): Promise<T> {
+  const session = init.auth === 'none' ? null : getSession()
+  let response = await send(path, init, session?.access ?? null)
+
+  if (response.status === 401 && session) {
+    if (await refreshSession()) {
+      response = await send(path, init, getSession()?.access ?? null)
+    } else {
+      clearSession()
+      emitSessionExpired()
+      if (init.auth === 'optional') {
+        response = await send(path, init, null)
+      }
+    }
+  }
 
   if (!response.ok) {
-    throw new ApiError(response.statusText, response.status)
+    let body: unknown
+    try {
+      body = await response.json()
+    } catch {
+      body = undefined
+    }
+    const detail =
+      body && typeof body === 'object' && typeof (body as { detail?: unknown }).detail === 'string'
+        ? ((body as { detail: string }).detail)
+        : response.statusText
+    throw new ApiError(detail, response.status, body)
   }
 
   if (response.status === 204) {

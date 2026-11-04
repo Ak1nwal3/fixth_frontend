@@ -64,7 +64,7 @@ export default function Navbar() {
 
           <div className="flex shrink-0 items-center gap-2">
             <Link
-              to="/auth/sign-in"
+              to="/auth/student/sign-in"
               className="hidden rounded-md px-2 py-2 text-[13px] font-medium tracking-[-0.03em] text-navy/75 transition hover:text-navy sm:block"
             >
               Log in
@@ -89,7 +89,7 @@ export default function Navbar() {
 
         {open && (
           <ul className="mx-auto mt-2 w-full max-w-[800px] space-y-1 rounded-[10px] bg-cream p-2 shadow-lg shadow-black/25 md:hidden">
-            {[...navLinks, { label: 'Log in', href: '/auth/sign-in' }].map((link) => (
+            {[...navLinks, { label: 'Log in', href: '/auth/student/sign-in' }].map((link) => (
               <li key={link.href}>
                 <NavItem
                   href={link.href}

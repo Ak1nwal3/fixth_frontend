@@ -256,6 +256,8 @@ button.p-text-link,a.p-text-link { display:inline-flex; align-items:center; min-
 .p-header>div:first-child { flex:1; }
 .p-header-user { max-width:240px; min-width:0; flex-shrink:1; }
 .p-header-user>span:last-child { min-width:0; max-width:160px; overflow-wrap:anywhere; }
+a.p-header-user { padding:4px 8px; margin:-4px -8px; border-radius:12px; cursor:pointer; }
+a.p-header-user:hover { background:#00002e14; }
 .p-dialog h2 { min-width:0; flex:1; overflow-wrap:anywhere; }
 @media(max-width:1000px) { .p-header-user { min-width:36px; max-width:36px; } }
 @media(max-width:1000px) { .details .p-apply-panel:has(.p-callout) { position:static; } }

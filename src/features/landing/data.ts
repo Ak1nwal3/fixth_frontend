@@ -11,10 +11,10 @@ export interface NavLink {
 }
 
 export const navLinks: NavLink[] = [
-  { label: 'Students', href: '#students' },
-  { label: 'Companies', href: '#companies' },
-  { label: 'Internship', href: '#internship' },
-  { label: 'Organisation', href: '/onboarding/organization/email' },
+  // { label: 'Students', href: '#students' },
+  // { label: 'Companies', href: '#companies' },
+  // { label: 'Internship', href: '#internship' },
+  // { label: 'Organisation', href: '/onboarding/organization/email' },
 ]
 
 /* -------------------------------------------------------------------------- */
