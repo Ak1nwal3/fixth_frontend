@@ -202,22 +202,64 @@ The generic `/auth/sign-in/`, `/auth/refresh/`, `/auth/sign-out/`, `/auth/passwo
 | `GET` | `/students/me/` | Student | Current student profile |
 | `POST` | `/students/me/` | Student | Create profile if missing |
 | `PATCH` | `/students/me/` | Student | Update current profile |
+| `DELETE` | `/students/me/` | Student | Confirm and request account deletion |
+| `POST` | `/students/me/verification/` | Student | Submit profile for verification review |
 
 ### Public placement discovery
 
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
 | `GET` | `/placements/` | Optional | Discover active, open placements |
+| `GET` | `/placements/facets/` | Public | Dynamic discovery filter values |
 | `GET` | `/placements/{slug}/` | Optional | Placement detail by slug |
 | `GET` | `/placements/by-id/{id}/` | Optional | Placement detail by UUID |
+| `GET` | `/companies/{slug}/` | Public | Public company profile by slug |
 
 “Optional” means anonymous requests work. A student access token adds `match`, `is_saved`, `has_applied`, `eligibility`, and `can_apply`.
+
+### Saved placements
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| `POST` | `/placements/{id}/save/` | Student | Save a currently discoverable placement |
+| `DELETE` | `/placements/{id}/save/` | Student | Remove the student's own saved record |
+| `GET` | `/students/me/saved-placements/` | Student | List the student's saved placements |
+
+### Student applications
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| `POST` | `/applications/` | Student | Apply to a placement |
+| `GET` | `/applications/` | Student | List the student's applications |
+| `GET` | `/applications/{id}/` | Student | Get one own application |
+| `GET` | `/applications/summary/` | Student | Application metrics |
+| `GET` | `/applications/{id}/events/` | Student | Application timeline |
+| `POST` | `/applications/{id}/withdraw/` | Student | Withdraw a pending/under-review application |
+
+### Student media and documents
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| `POST` | `/students/me/photo/` | Student | Upload/replace profile photo |
+| `DELETE` | `/students/me/photo/` | Student | Delete profile photo |
+| `GET` | `/students/me/resume/` | Student | Get active resume metadata |
+| `POST` | `/students/me/resume/` | Student | Upload/replace active resume |
+| `DELETE` | `/students/me/resume/` | Student | Delete active resume |
+| `GET` | `/documents/{id}/download/` | Owner / authorized Company / Admin | Download an authorized document |
+
+### Company profile and metrics
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| `GET` | `/companies/me/` | Company | Current company profile |
+| `PATCH` | `/companies/me/` | Company | Update current company profile/logo |
+| `GET` | `/company/summary/` | Company | Company dashboard metrics |
 
 ### Company placement management
 
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
-| `GET` | `/company/placements/` | Company | List own placements in every state |
+| `GET` | `/company/placements/` | Company | List own placements with applicant counts |
 | `POST` | `/company/placements/` | Company | Create a draft or publish immediately |
 | `GET` | `/company/placements/{id}/` | Company | Own placement detail/preview |
 | `PATCH` | `/company/placements/{id}/` | Company | Edit, save draft, close, or publish |
@@ -233,6 +275,7 @@ Company endpoints require an active organization account with a verified email. 
 | `GET` | `/company/applications/{id}/` | Company | Review one application |
 | `PATCH` | `/company/applications/{id}/` | Company | Change application status |
 | `GET` | `/company/placements/{placement_id}/applicants/` | Company | List applicants for one placement |
+| `GET` | `/company/applications/{id}/contact/` | Company | Gated applicant contact details |
 
 Companies can read applications and move them through review statuses. They cannot create or delete student applications; those records are student-owned and preserved for history.
 
@@ -276,7 +319,12 @@ id, owner_id, kind, file, original_name, mime_type, size, is_private,
 scan_status, created_at, url
 ```
 
-`url` is the absolute file URL when available. Private documents should not be exposed directly by the frontend without an authenticated download flow.
+- `file` is a storage path for private documents and an absolute storage URL for public media.
+- `url` behavior:
+- Public media (`is_private=false`) use an absolute storage URL when available.
+- Private documents use an absolute `/documents/{id}/download/` URL; `file` is a storage path, not a media URL.
+- Only `scan_status="clean"` documents should be treated as trusted. `scan_status` is informational and is `pending`, `clean`, `infected`, or `skipped`.
+- Do not render or cache private `file` paths as direct media URLs; use the authorized download URL.
 
 ### `Company`
 
@@ -288,21 +336,59 @@ primary_contact_title, verification_status, risk_level, created_at, updated_at
 
 `logo` is a `Document` object or `null`. `industry` is one of `Technology`, `Engineering`, `Construction`, `Manufacturing`, `Energy`, `Other`.
 
+### `PublicCompany`
+
+```text
+id, name, slug, website, industry, description, country, city, address,
+logo_url, verification_status
+```
+
+Private fields such as `owner_id`, `registration_number`, primary contact details, and `risk_level` are not included.
+
+### `CompanyMetrics`
+
+```text
+active_placements, applicants, shortlisted, hired
+```
+
+### `PlacementFacets`
+
+```text
+disciplines[], locations[], durations[], work_styles[]
+```
+
+### `ApplicantContact`
+
+```text
+email, phone
+```
+
 ### `Placement`
 
 ```text
 id, slug, title, company, company_id, company_slug, company_logo_url,
-company_verified, location, work_style, duration, discipline, level,
+company_verified, location, work_style, duration, discipline, level, type,
 stipend, stipend_amount, currency, description, responsibilities,
-requirements, status, reports, match, is_saved, has_applied,
+requirements, status, reports, expires_at, match, is_saved, has_applied,
 published_at, created_at, updated_at
 ```
 
 - `company` and `discipline` are display-name strings.
 - `work_style`: `Hybrid`, `Remote`, or `On-site`.
+- `type`: `Internship`, `SIWES`, `Industrial Training`, or `null` for legacy/incomplete listings.
 - `status`: `Active`, `Draft`, `Closed`, `Expired`, or `Unpublished`.
+- `expires_at` is the application deadline or `null`.
 - `match`: integer or `null`; only populated for a signed-in student with a discipline.
 - `reports`: report count.
+- `GET /company/placements/` additionally returns `applicants_count`, `new_applicants_count`, and `shortlisted_count`.
+
+### `SavedPlacement`
+
+```text
+id, placement, created_at
+```
+
+`placement` is the full `Placement` shape and `created_at` is the date/time the student saved it.
 
 ### `PlacementDetail`
 
@@ -334,10 +420,18 @@ cover_note, events[], updated_at
 - `student` is a privacy-limited profile summary:
   `id, user_id, first_name, last_name, full_name, institution, discipline, level, location, skills[], photo_url, verification_status, risk_level`.
 - `resume` is a `Document` object or `null`.
-- `status`: `Submitted`, `Viewed`, `Shortlisted`, `Rejected`, or `Accepted`.
+- `status`: `Submitted`, `Viewed`, `Shortlisted`, `Rejected`, `Accepted`, or `Withdrawn`.
 - `decided_by_email` is the company user who last changed the status.
-- `cover_note` is currently read-only until the student apply endpoint exists.
+- `cover_note` is currently read-only.
 - `events[]` contains `id, from_status, to_status, actor_email, reason, created_at`.
+
+### `ApplicationSummary`
+
+```text
+total, pending, under_review, shortlisted, accepted, rejected, withdrawn
+```
+
+`pending` counts applications in the `Submitted` status. `under_review` counts applications in the `Viewed` status. These are summary labels only; they do not introduce additional model statuses.
 
 ### `Paginated<Placement>`
 
@@ -774,7 +868,60 @@ Partial `StudentProfile` payload. `skills` replaces the full skill set when prov
 
 `email` is read-only here; email changes go through `/auth/student/me/` and are currently rejected pending a re-verification flow.
 
-`photo` and `resume` are read-only. There is no document upload endpoint yet.
+`photo` and `resume` are read-only. Use the dedicated student media endpoints.
+
+### 6.5 Submit profile verification
+
+```http
+POST /api/v1/students/me/verification/
+Authorization: Bearer <student-access>
+Content-Type: application/json
+```
+
+No request body is required.
+
+The review uses the authenticated student's existing profile. It does not accept a `student_id`, evidence documents, status, or decision fields.
+
+**201** `VerificationRequest` with `kind="student"` and `status="Pending"`. The profile is also set to `Pending`.
+
+Lifecycle:
+
+- `Pending`: under review.
+- `Verified`: approved by an administrator.
+- `Rejected`: rejected by an administrator.
+- A rejected student may submit again.
+- Pending and verified students cannot submit another request.
+- Students cannot approve, reject, or edit the review decision.
+
+Errors: `401`, `403` wrong role/unverified account/no active profile, `409` pending or already verified.
+
+### 6.6 Delete the student account
+
+```http
+DELETE /api/v1/students/me/
+Authorization: Bearer <student-access>
+Content-Type: application/json
+```
+
+```json
+{
+  "confirm": true
+}
+```
+
+`confirm` must be exactly `true`. The operation:
+
+- Soft-deletes and anonymizes the profile.
+- Replaces the email with an unrecoverable `deleted-*@deleted.fixth.invalid` address, blanks personal names/contact details, and makes the password unusable.
+- Sets the account inactive/deleted and blacklists all outstanding refresh tokens.
+- Deletes saved placements, notifications, and OTP codes.
+- Clears student cover notes and unreferenced personal media.
+- Retains applications, application timelines, application resume documents, placement/company records, verification records, and audit logs required for history.
+- A deleted account cannot authenticate or be reused through its original email.
+
+**204** No content.
+
+Errors: `400` missing confirmation, `401`, `403`, `404` profile not found, `409` already deleted.
 
 ---
 
@@ -863,6 +1010,71 @@ GET /api/v1/placements/by-id/<uuid>/
 
 **200** `PlacementDetail`, or `404`.
 
+### 7.4 Placement discovery facets
+
+```http
+GET /api/v1/placements/facets/
+```
+
+**200** `PlacementFacets`. Values are derived from the same active/public placements returned by discovery. They can be passed back to `/placements/` as `discipline`, `location`, `duration`, and `work_style`.
+
+### 7.5 Public company profile by slug
+
+```http
+GET /api/v1/companies/<slug>/
+```
+
+**200** `PublicCompany`, or `404`.
+
+Rejected, deleted, and inactive company accounts are not exposed. Private company and owner data are excluded.
+
+### 7.6 Saved placements
+
+All saved-placement endpoints require:
+
+```http
+Authorization: Bearer <student-access>
+```
+
+The student profile is derived from the token; request bodies and URLs never supply a student ID. Company and administrator accounts receive `403`.
+
+#### Save a placement
+
+```http
+POST /api/v1/placements/<placement-id>/save/
+```
+
+No request body.
+
+Only currently discoverable placements can be saved: active, open listings from active companies that are not rejected.
+
+**201** `SavedPlacement`
+
+Errors:
+
+- `401` no authentication.
+- `403` not a verified student, or no active student profile.
+- `404` the placement does not exist or is not currently discoverable.
+- `409` the student has already saved this placement.
+
+#### Remove a saved placement
+
+```http
+DELETE /api/v1/placements/<placement-id>/save/
+```
+
+**204** No content. Removes only the authenticated student's saved record.
+
+Errors: `401`, `403`, `404` when the placement/save record does not exist for that student.
+
+#### List saved placements
+
+```http
+GET /api/v1/students/me/saved-placements/?page=1&page_size=20
+```
+
+**200** `Paginated<SavedPlacement>`, newest save first. Results include the full current placement payload, including current status and `expires_at`, plus the saved record's `created_at`. A placement may remain in this list after it is closed; the status shows the current state.
+
 ---
 
 ## 8. Company placement management
@@ -881,7 +1093,13 @@ The account must be an active company account with a verified email. If the acco
 GET /api/v1/company/placements/?status=Draft&q=backend&sort=newest&page=1&page_size=20
 ```
 
-Returns `Paginated<Placement>` in every state, including drafts and closed listings.
+Returns `Paginated<Placement>` in every state, including drafts and closed listings. Every result also includes:
+
+```text
+applicants_count, new_applicants_count, shortlisted_count
+```
+
+`new_applicants_count` counts applications still in the `Submitted` state.
 
 | Parameter | Notes |
 |---|---|
@@ -920,7 +1138,7 @@ Content-Type: application/json
 
 Required at create time: `title`, `location`, `work_style`, `duration`, `discipline`, `level`.
 
-Optional: `stipend_amount`, `currency` (default `NGN`), `description`, `responsibilities`, `requirements`, `status`, `expires_at`.
+Optional: `type`, `stipend_amount`, `currency` (default `NGN`), `description`, `responsibilities`, `requirements`, `status`, `expires_at`.
 
 `status` at creation may be `Draft` or `Active` only and defaults to `Draft`.
 
@@ -1002,6 +1220,51 @@ Errors:
 - `400` missing required publishing content.
 - `409` the placement is already active, expired, or unpublished. Only draft/closed placements can use this action.
 - `404` not owned by the caller.
+
+### 8.6 Current company profile
+
+```http
+GET /api/v1/companies/me/
+PATCH /api/v1/companies/me/
+Authorization: Bearer <organization-access>
+```
+
+**GET** returns the authenticated company’s own full `Company` profile, including private company-management fields. A company without an active profile gets `403`.
+
+**PATCH** accepts any subset of:
+
+```json
+{
+  "name": "Nova Labs Africa",
+  "website": "novalabs.example",
+  "industry": "Technology",
+  "description": "Updated company description.",
+  "country": "Nigeria",
+  "city": "Lagos",
+  "address": "12 Marina Road",
+  "registration_number": "RC-123456",
+  "primary_contact_name": "Bola Verifier",
+  "primary_contact_title": "Talent Lead",
+  "logo": null
+}
+```
+
+Use `multipart/form-data` when sending a logo file. `logo: null` clears the logo; omitting `logo` leaves it unchanged. `id`, `owner_id`, `slug`, `verification_status`, `risk_level`, and timestamps are server-owned.
+
+**200** `Company`.
+
+Errors: `400`, `401`, `403`, `413`, `415`.
+
+### 8.7 Company dashboard metrics
+
+```http
+GET /api/v1/company/summary/
+Authorization: Bearer <organization-access>
+```
+
+**200** `CompanyMetrics` scoped to the caller’s placements. `active_placements` excludes active listings past their expiry time.
+
+Errors: `401`, `403`.
 
 ---
 
@@ -1096,11 +1359,211 @@ Companies cannot create or delete applications:
 
 Applications are student-owned records and are kept for audit/history. The company-side API intentionally supports list, retrieve, and status update only.
 
+### 9.6 Get gated applicant contact details
+
+```http
+GET /api/v1/company/applications/{id}/contact/
+Authorization: Bearer <organization-access>
+```
+
+**200** `ApplicantContact` only when the application status is `Shortlisted` or `Accepted`:
+
+```json
+{
+  "email": "ada@university.edu.ng",
+  "phone": "+2348010000000"
+}
+```
+
+`403` for other statuses, including `Submitted`, `Viewed`, and `Rejected`. `404` if the application is missing or belongs to another company.
+
 ---
 
-## 10. Frontend integration checklist
+## 10. Student applications
 
-### 10.1 Base URL and CORS
+All endpoints in this section require a verified student account:
+
+```http
+Authorization: Bearer <student-access>
+```
+
+The student profile is derived from the token. Another student’s application returns `404`.
+
+### 10.1 Apply to a placement
+
+```http
+POST /api/v1/applications/
+Authorization: Bearer <student-access>
+Content-Type: application/json
+```
+
+```json
+{
+  "placement_id": "<placement-uuid>",
+  "resume_id": "<optional-resume-document-uuid>"
+}
+```
+
+The student’s active resume is used when `resume_id` is omitted. The placement must be active/open, match the student’s discipline and level, and not already have an application.
+
+**201** `Application`, with an initial `Submitted` timeline event.
+
+Errors: `400` invalid/ineligible placement or missing resume, `401`, `403`, `409` already applied.
+
+### 10.2 List the student's applications
+
+```http
+GET /api/v1/applications/?status=Shortlisted&page=1&page_size=20
+Authorization: Bearer <student-access>
+```
+
+| Parameter | Notes |
+|---|---|
+| `status` | `Submitted`, `Viewed`, `Shortlisted`, `Accepted`, `Rejected`, `Withdrawn`, or `All`; case-insensitive |
+| `page` / `page_size` | Pagination; default 20, max 100 |
+
+**200** `Paginated<Application>`, newest application first. Invalid status returns `400`.
+
+### 10.3 Get one application
+
+```http
+GET /api/v1/applications/{id}/
+Authorization: Bearer <student-access>
+```
+
+**200** `Application`, including full placement/company details, status, resume metadata, cover note, and timeline.
+
+Errors: `401`, `403`, `404`.
+
+### 10.4 Get application metrics
+
+```http
+GET /api/v1/applications/summary/
+Authorization: Bearer <student-access>
+```
+
+**200** `ApplicationSummary`.
+
+### 10.5 Get application timeline
+
+```http
+GET /api/v1/applications/{id}/events/
+Authorization: Bearer <student-access>
+```
+
+**200** `ApplicationEvent[]`, chronological by `created_at`.
+
+Errors: `401`, `403`, `404`.
+
+### 10.6 Withdraw an application
+
+```http
+POST /api/v1/applications/{id}/withdraw/
+Authorization: Bearer <student-access>
+```
+
+No request body. Withdrawal is allowed only while the status is `Submitted`, `Viewed`, or `Shortlisted`.
+
+**200** `Application` with `status="Withdrawn"` and a timeline event.
+
+Errors:
+
+- `401` no authentication.
+- `403` not a verified student account.
+- `404` not owned by the caller.
+- `409` already withdrawn, accepted, rejected, or otherwise not withdrawable.
+
+---
+
+## 11. Student media and documents
+
+### 11.1 Profile photo upload/replace
+
+```http
+POST /api/v1/students/me/photo/
+Authorization: Bearer <student-access>
+Content-Type: multipart/form-data
+```
+
+| Field | Required | Accepted values |
+|---|---|---|
+| `file` | Yes | Actual JPEG, PNG, or WebP image; maximum 2 MB; dimensions up to 4096 px |
+
+**200** `StudentProfile` with the new `photo: Document`. Photos are public media and exposed through their media URL.
+
+Errors: `400` invalid/empty file, `401`, `403`, `413` too large, `415` unsupported image.
+
+### 11.2 Profile photo delete
+
+```http
+DELETE /api/v1/students/me/photo/
+Authorization: Bearer <student-access>
+```
+
+**204** No content. An already-empty photo also returns `204`. The stored file is removed when it is no longer referenced.
+
+### 11.3 Get active resume
+
+```http
+GET /api/v1/students/me/resume/
+Authorization: Bearer <student-access>
+```
+
+**200** `Document`. For a private resume, `url` is an absolute authorized download URL and `file` is a storage path, not a direct media URL.
+
+**404** if there is no active resume.
+
+### 11.4 Resume upload/replace
+
+```http
+POST /api/v1/students/me/resume/
+Authorization: Bearer <student-access>
+Content-Type: multipart/form-data
+```
+
+| Field | Required | Accepted values |
+|---|---|---|
+| `file` | Yes | Actual PDF, DOC, or DOCX; maximum 5 MB |
+
+The upload is private. A new `Document` is created for every replacement so existing applications keep the resume version submitted with them. When the previous resume is not referenced by an application, its database record and stored file are removed.
+
+**201** `Document`.
+
+Errors: `400` invalid/empty/unsupported content, `401`, `403`, `413` too large, `415` unsupported media type.
+
+### 11.5 Delete active resume
+
+```http
+DELETE /api/v1/students/me/resume/
+Authorization: Bearer <student-access>
+```
+
+**204** No content. An already-empty resume also returns `204`. If any application uses the resume, that document version is preserved.
+
+### 11.6 Download an authorized document
+
+```http
+GET /api/v1/documents/{id}/download/
+Authorization: Bearer <access>
+```
+
+Authorized callers:
+
+- The document owner.
+- An administrator.
+- An active company that received a resume with an application from its own placement.
+
+Only documents with `scan_status="clean"` should be treated as trusted. Current MVP downloads do not gate on malware scanning.
+
+The response streams the file, sets the document MIME type when available, and uses `Content-Disposition: attachment` with the original filename.
+
+Errors: `401`, `403` unauthorized, `404` document/file not found.
+
+---
+
+## 12. Frontend integration checklist
+
+### 12.1 Base URL and CORS
 
 Point the frontend at:
 
@@ -1113,7 +1576,7 @@ The backend currently has **no CORS configuration**. Calling `localhost:8000` fr
 - add `django-cors-headers` and allow the frontend origin, or
 - add a Vite dev proxy and use a relative `/api/v1` base URL.
 
-### 10.2 Token handling
+### 12.2 Token handling
 
 The current `src/services/http.ts` does not attach an `Authorization` header and does not parse error bodies. Before wiring screens:
 
@@ -1125,11 +1588,11 @@ The current `src/services/http.ts` does not attach an `Authorization` header and
 
 Do not send refresh tokens in URLs or logs.
 
-### 10.3 Multipart uploads
+### 12.3 Multipart uploads
 
 `http.ts` always sets `Content-Type: application/json`. For organization onboarding with a logo, use `FormData` and let the browser set the multipart boundary. Do not manually set `Content-Type` for multipart requests.
 
-### 10.4 Password reset route
+### 12.4 Password reset route
 
 The backend emails links to:
 
@@ -1145,31 +1608,35 @@ POST /api/v1/auth/organization/password-reset/confirm/
 POST /api/v1/auth/password-reset/confirm/
 ```
 
-### 10.5 Not implemented yet
+### 12.5 Not implemented yet
 
 The following product endpoints are **not available** despite appearing in `endpoints.md`:
 
-- Company profile `GET/PATCH /companies/me/`
-- Public company summary `/companies/{slug}/`
-- Saved placements `POST/DELETE /placements/{id}/save/` and `/students/me/saved-placements/`
-- Placement facets `/placements/facets/`
-- Student-side applications (`POST /applications/`, student application list/detail/withdraw)
-- Gated applicant contact details (`GET /company/applications/{id}/contact/`)
 - Admin verification, moderation, accounts, and audit endpoints
-- Document/photo/resume upload endpoints
 - Listing report endpoint
-- Dedicated placement close/delete actions (close via `PATCH status="Closed"` instead)
-- Company summary metrics and applicant counts on the company placement list
+- Notifications, team, and messaging endpoints
+- Landing and talent-facing feed endpoints
+- `GET /students/{id}/`
 
-`is_saved` and `has_applied` are returned for compatibility, but there are currently no save/apply endpoints to change them.
+Dedicated publish (`POST /company/placements/{id}/publish/`) is live. Close via `PATCH status="Closed"`.
 
-### 10.6 Demo-only frontend state
+### 12.6 Frontend consumption status
 
-The current frontend still reads/writes `sessionStorage` via `ProductProvider`. Sign-in, onboarding, profile, and placement screens are mock flows. Wire the screens to this API only after adding a real auth/session layer; otherwise the UI will continue to show demo data even when the backend has live records.
+Consumed by the frontend (services → screens):
+
+- Discovery: `GET /placements/`, `GET /placements/{slug}/`, `GET /placements/by-id/{id}/`, `GET /placements/facets/`, `GET /disciplines/`
+- Saved placements: `POST/DELETE /placements/{id}/save/`, `GET /students/me/saved-placements/` (bookmark button on discovery cards; Saved page)
+- Placement detail: apply panel plus a public company panel from `GET /companies/{slug}/`
+- Student applications: create, list, retrieve, summary, events, withdraw (`/applications/…`)
+- Student media/profile: photo upload/remove, resume get/upload/remove, `GET /documents/{id}/download/`, verification submit, account deletion
+- Company: `GET/PATCH /companies/me/` (profile editor + layout identity), `GET /company/summary/` (dashboard metrics), `POST /company/placements/{id}/publish/` (editor publish action), `GET /company/placements/…`, `GET /company/applications/…`, `POST /company/applications/{id}/contact/`
+- Public company profile: `GET /companies/{slug}/`
+
+Not yet consumed: admin workspace endpoints (mock `ProductProvider`), notifications/team/messaging, landing/talent feeds.
 
 ---
 
-## 11. Quick examples
+## 13. Quick examples
 
 ### Sign in and store tokens
 
@@ -1225,6 +1692,15 @@ curl -X PATCH http://localhost:8000/api/v1/company/applications/$APPLICATION_ID/
 ```bash
 curl "http://localhost:8000/api/v1/company/placements/$PLACEMENT_ID/applicants/?status=Viewed&page=1" \
   -H "Authorization: Bearer $ACCESS"
+```
+
+### Apply to a placement
+
+```bash
+curl -X POST http://localhost:8000/api/v1/applications/ \
+  -H "Authorization: Bearer $STUDENT_ACCESS" \
+  -H "Content-Type: application/json" \
+  -d '{"placement_id":"'$PLACEMENT_ID'"}'
 ```
 
 ### Discover placements

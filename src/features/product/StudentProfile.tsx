@@ -1,13 +1,17 @@
 ﻿import { Field, ValidatedForm } from './components/Form'
-import { useState, type SubmitEvent } from 'react';
+import { useState, useEffect, type SubmitEvent, type ChangeEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { FileText, Upload, Pencil, ShieldCheck } from 'lucide-react';
 import { initials, dateLabel } from './data';
 import { useStudentData } from './useStudentData';
+import { useAuth } from '@/features/auth/useAuth';
 import { ApiError } from '@/services/http';
 import type { StudentProfilePatch } from '@/services/profile';
 import { apiErrorMessage } from '@/services/types';
-import { Badge, Panel, Modal } from './components/ui';
+import type { ApiDocument } from '@/services/types';
+import { downloadDocument } from '@/services/documents';
+import { MAX_PHOTO_BYTES, deleteStudentAccount, deleteStudentPhoto, submitStudentVerification, uploadStudentPhoto } from '@/services/studentMedia';
+import { Avatar, Badge, Panel, Modal } from './components/ui';
 
 function Details({ items }: {
     items: [
@@ -25,11 +29,45 @@ function ProfileStatus() {
 }
 
 export function ProfilePage() {
-    const { profile, status } = useStudentData();
+    const { profile, status, replaceProfile } = useStudentData();
+    const { signOut } = useAuth();
+    const navigate = useNavigate();
     const [confirm, setConfirm] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState('');
+    const [verificationBusy, setVerificationBusy] = useState(false);
+    const [verificationMessage, setVerificationMessage] = useState('');
     if (status !== 'ready' || !profile) return <ProfileStatus />;
     const name = `${profile.firstName} ${profile.lastName}`.trim() || 'Your profile';
-    return <div className="p-columns"><Panel><div className="p-between"><div className="p-identity"><span className="p-avatar large">{profile.photo?.url ? <img src={profile.photo.url} alt="" /> : initials(name)}</span><div><h2>{name}</h2><p>{profile.discipline || 'Add your discipline'} student {profile.verificationStatus === 'Verified' && <ShieldCheck size={14} className="p-inline-success" aria-hidden/>}</p></div></div><Link to="/student/profile/edit" className="p-button"><Pencil size={14} aria-hidden/>Edit profile</Link></div><div className="p-profile-contact"><div><small>Email</small><p>{profile.email || 'Not provided'}</p></div><div><small>Location</small><p>{profile.location || 'Not provided'}</p></div><div><small>Phone</small><p>{profile.phone || 'Not provided'}</p></div></div><h3>Education</h3><Details items={[['Institution', profile.institution], ['Discipline', profile.discipline], ['Academic level', `${profile.level} level`], ['Graduation year', profile.graduationYear ? String(profile.graduationYear) : '']]}/><h3>Placement preferences</h3><Details items={[['Preferred locations', profile.location], ['Duration', profile.duration], ['Work type', profile.workStyles.join(' · ')]]}/><h3>Skills</h3><Details items={[['Core skills', profile.skills.join(' · ')], ['Interests', profile.interests], ['Portfolio', profile.portfolio]]}/></Panel><aside className="p-stack"><Panel><div className="p-between"><h2>Profile strength</h2><strong className="p-text-link">{profile.profileStrength}%</strong></div><progress aria-label="Profile completion" max={100} value={profile.profileStrength}/><p>Add a portfolio link and active resume to complete your profile.</p></Panel><Panel className="tinted"><p className="p-eyebrow">Active resume</p><h2>{profile.resume?.original_name || 'No active resume'}</h2><Link className="p-text-link" to="/student/resume">Manage or replace resume →</Link></Panel><Panel><h2>Account settings</h2><button type="button" className="p-danger-link" onClick={() => setConfirm(true)}>Delete account and data</button></Panel></aside>{confirm && <Modal title="Delete your profile?" onClose={() => setConfirm(false)}><p>Account deletion is not available yet. When the account deletion API ships, you will be able to remove your profile and data here.</p><div className="p-actions"><button type="button" className="p-button secondary" onClick={() => setConfirm(false)}>Close</button></div></Modal>}</div>;
+    const verificationTone = profile.verificationStatus === 'Verified' ? 'success' : profile.verificationStatus === 'Rejected' ? 'danger' : 'warning';
+    const submitVerification = async () => {
+        if (verificationBusy) return;
+        setVerificationBusy(true);
+        setVerificationMessage('');
+        try {
+            await submitStudentVerification();
+            replaceProfile({ ...profile, verificationStatus: 'Pending' });
+            setVerificationMessage('Submitted for review. We will let you know when a decision is made.');
+        } catch (error) {
+            setVerificationMessage(error instanceof ApiError ? apiErrorMessage(error.body, 'Your profile could not be submitted.') : 'Could not reach the server. Check your connection and try again.');
+        } finally {
+            setVerificationBusy(false);
+        }
+    };
+    const deleteAccount = async () => {
+        if (deleting) return;
+        setDeleting(true);
+        setDeleteError('');
+        try {
+            await deleteStudentAccount();
+            await signOut();
+            navigate('/', { replace: true });
+        } catch (error) {
+            setDeleting(false);
+            setDeleteError(error instanceof ApiError ? apiErrorMessage(error.body, 'Your account could not be deleted. Try again.') : 'Could not reach the server. Try again.');
+        }
+    };
+    return <div className="p-columns"><Panel><div className="p-between"><div className="p-identity"><Avatar className="large" src={profile.photo?.url} fallback={initials(name)} /><div><h2>{name}</h2><p>{profile.discipline || 'Add your discipline'} student {profile.verificationStatus === 'Verified' && <ShieldCheck size={14} className="p-inline-success" aria-hidden/>}</p></div></div><Link to="/student/profile/edit" className="p-button"><Pencil size={14} aria-hidden/>Edit profile</Link></div><div className="p-profile-contact"><div><small>Email</small><p>{profile.email || 'Not provided'}</p></div><div><small>Location</small><p>{profile.location || 'Not provided'}</p></div><div><small>Phone</small><p>{profile.phone || 'Not provided'}</p></div></div><h3>Education</h3><Details items={[['Institution', profile.institution], ['Discipline', profile.discipline], ['Academic level', `${profile.level} level`], ['Graduation year', profile.graduationYear ? String(profile.graduationYear) : '']]}/><h3>Placement preferences</h3><Details items={[['Preferred locations', profile.location], ['Duration', profile.duration], ['Work type', profile.workStyles.join(' · ')]]}/><h3>Skills</h3><Details items={[['Core skills', profile.skills.join(' · ')], ['Interests', profile.interests], ['Portfolio', profile.portfolio]]}/></Panel><aside className="p-stack"><Panel><div className="p-between"><h2>Profile strength</h2><strong className="p-text-link">{profile.profileStrength}%</strong></div><progress aria-label="Profile completion" max={100} value={profile.profileStrength}/><p>Add a portfolio link and active resume to complete your profile.</p></Panel><Panel className="tinted"><p className="p-eyebrow">Active resume</p><h2>{profile.resume?.original_name || 'No active resume'}</h2><Link className="p-text-link" to="/student/resume">Manage or replace resume →</Link></Panel><Panel className="tinted"><p className="p-eyebrow">Verification</p><div className="p-between"><h2>{profile.verificationStatus === 'Verified' ? 'You are verified' : 'Account verification'}</h2><Badge tone={verificationTone}>{profile.verificationStatus}</Badge></div>{profile.verificationStatus === 'Verified' ? <p className="p-small">A verified badge appears next to your profile for companies that receive your applications.</p> : <><p className="p-small">{profile.verificationStatus === 'Rejected' ? 'Your last submission was rejected. You can submit your profile for review again.' : 'Submit your profile for review. No extra documents are required — the review uses your current profile.'}</p><p role="alert" className="p-error">{verificationMessage}</p><button type="button" className="p-button" disabled={verificationBusy} onClick={submitVerification}>{verificationBusy ? 'Submitting…' : profile.verificationStatus === 'Rejected' ? 'Submit again' : 'Submit for review'}</button></>}</Panel><Panel><h2>Account settings</h2><button type="button" className="p-danger-link" onClick={() => !deleting && setConfirm(true)}>Delete account and data</button></Panel></aside>{confirm && <Modal title="Delete your account?" onClose={() => !deleting && setConfirm(false)}><p>This permanently deletes your profile, saved placements, and personal data. Applications that companies must keep for their records are retained without your personal details. You will be signed out and cannot undo this.</p>{deleteError && <p role="alert" className="p-error">{deleteError}</p>}<div className="p-actions"><button type="button" className="p-button secondary" disabled={deleting} onClick={() => setConfirm(false)}>Keep my account</button><button type="button" className="p-button" disabled={deleting} onClick={deleteAccount}>{deleting ? 'Deleting…' : 'Delete account'}</button></div></Modal>}</div>;
 }
 
 interface EditableProfile {
@@ -51,12 +89,14 @@ const apiFieldNames: Record<string, keyof EditableProfile> = {
 };
 
 export function EditProfilePage() {
-    const { profile, status, saveProfile } = useStudentData();
+    const { profile, status, saveProfile, replaceProfile } = useStudentData();
     const navigate = useNavigate();
     const [form, setForm] = useState<EditableProfile | null>(null);
     const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState('');
     const [errors, setErrors] = useState<Partial<Record<keyof EditableProfile, string>>>({});
+    const [photoBusy, setPhotoBusy] = useState(false);
+    const [photoError, setPhotoError] = useState('');
     if (status !== 'ready' || !profile) return <ProfileStatus />;
     const current: EditableProfile = form ?? {
         firstName: profile.firstName, lastName: profile.lastName, email: profile.email, phone: profile.phone,
@@ -85,6 +125,38 @@ export function EditProfilePage() {
         { name: 'duration', label: 'Preferred duration' }, { name: 'workStyle', label: 'Work type' }, { name: 'portfolio', label: 'Portfolio link', type: 'url' },
         { name: 'skills', label: 'Core skills' }, { name: 'interests', label: 'Interests' },
     ];
+    const onPhotoSelect = async (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+        if (!file || photoBusy || !profile) return;
+        if (file.size > MAX_PHOTO_BYTES) {
+            setPhotoError('Photos must be 2 MB or smaller.');
+            return;
+        }
+        setPhotoBusy(true);
+        setPhotoError('');
+        try {
+            const updated = await uploadStudentPhoto(file);
+            replaceProfile(updated);
+        } catch (error) {
+            setPhotoError(error instanceof ApiError ? apiErrorMessage(error.body, 'The photo could not be uploaded.') : 'Could not reach the server. Check your connection and try again.');
+        } finally {
+            setPhotoBusy(false);
+        }
+    };
+    const removePhoto = async () => {
+        if (photoBusy || !profile) return;
+        setPhotoBusy(true);
+        setPhotoError('');
+        try {
+            await deleteStudentPhoto();
+            replaceProfile({ ...profile, photo: null });
+        } catch (error) {
+            setPhotoError(error instanceof ApiError ? apiErrorMessage(error.body, 'The photo could not be removed.') : 'Could not reach the server. Check your connection and try again.');
+        } finally {
+            setPhotoBusy(false);
+        }
+    };
     const submit = async (event: SubmitEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (busy) return;
@@ -124,12 +196,84 @@ export function EditProfilePage() {
             setBusy(false);
         }
     };
-    return <div className="p-columns"><Panel><div className="p-between"><h2>Profile information</h2><Badge tone="neutral">{form === null ? 'Saved' : 'Unsaved changes'}</Badge></div><p>Required fields help determine placement eligibility.</p><ValidatedForm className="p-form" onSubmit={submit}><div className="p-identity"><span className="p-avatar large">{profile.photo?.url ? <img src={profile.photo.url} alt="" /> : initials(`${current.firstName} ${current.lastName}`)}</span><Field className="p-field"><span>Change photo</span><input type="file" name="photo" accept="image/png,image/jpeg,image/webp" disabled aria-describedby="photo-note" /><span id="photo-note" className="p-small">Photo upload is coming soon.</span></Field></div><div className="p-form-grid">{fields.map(field => <Field className="p-field" key={field.name}><span>{field.label}{field.required ? ' *' : ''}</span><input name={field.name} type={field.type || 'text'} required={field.required} disabled={field.disabled} value={current[field.name] ?? ''} min={field.name === 'level' ? 100 : field.name === 'graduation' ? 2000 : undefined} max={field.name === 'level' ? 700 : field.name === 'graduation' ? 2100 : undefined} step={field.name === 'level' ? 100 : undefined} onChange={e => update(field.name, e.target.value)} autoComplete={field.name === 'firstName' ? 'given-name' : field.name === 'lastName' ? 'family-name' : field.name === 'email' ? 'email' : field.name === 'phone' ? 'tel' : 'off'} aria-invalid={!!errors[field.name] || undefined} />{field.hint && <span className="p-small">{field.hint}</span>}{errors[field.name] && <span role="alert" className="p-error">{errors[field.name]}</span>}</Field>)}</div><p role="alert" className="p-error">{message}</p><div className="p-actions"><button type="submit" className="p-button" disabled={busy || form === null}>{busy ? 'Saving…' : 'Save changes'}</button><Link to="/student/profile" className="p-button secondary">Cancel</Link></div></ValidatedForm></Panel><aside><Panel className="tinted"><p className="p-eyebrow">Why it matters</p><h2>Accurate details improve matches</h2><p>Your discipline, level, and skills determine which placements you’re eligible for.</p></Panel></aside></div>;
+    return <div className="p-columns"><Panel><div className="p-between"><h2>Profile information</h2><Badge tone="neutral">{form === null ? 'Saved' : 'Unsaved changes'}</Badge></div><p>Required fields help determine placement eligibility.</p><ValidatedForm className="p-form" onSubmit={submit}><div className="p-identity"><Avatar className="large" src={profile.photo?.url} fallback={initials(`${current.firstName} ${current.lastName}`)} /><Field className="p-field"><span>Change photo</span><input type="file" name="photo" accept="image/png,image/jpeg,image/webp" disabled={photoBusy} onChange={onPhotoSelect} aria-describedby="photo-note" /><span id="photo-note" className="p-small">PNG, JPEG, or WebP · Maximum 2 MB.</span>{profile.photo && <button type="button" className="p-danger-link" disabled={photoBusy} onClick={removePhoto}>Remove photo</button>}</Field>{photoError && <p role="alert" className="p-error">{photoError}</p>}</div><div className="p-form-grid">{fields.map(field => <Field className="p-field" key={field.name}><span>{field.label}{field.required ? ' *' : ''}</span><input name={field.name} type={field.type || 'text'} required={field.required} disabled={field.disabled} value={current[field.name] ?? ''} min={field.name === 'level' ? 100 : field.name === 'graduation' ? 2000 : undefined} max={field.name === 'level' ? 700 : field.name === 'graduation' ? 2100 : undefined} step={field.name === 'level' ? 100 : undefined} onChange={e => update(field.name, e.target.value)} autoComplete={field.name === 'firstName' ? 'given-name' : field.name === 'lastName' ? 'family-name' : field.name === 'email' ? 'email' : field.name === 'phone' ? 'tel' : 'off'} aria-invalid={!!errors[field.name] || undefined} />{field.hint && <span className="p-small">{field.hint}</span>}{errors[field.name] && <span role="alert" className="p-error">{errors[field.name]}</span>}</Field>)}</div><p role="alert" className="p-error">{message}</p><div className="p-actions"><button type="submit" className="p-button" disabled={busy || form === null}>{busy ? 'Saving…' : 'Save changes'}</button><Link to="/student/profile" className="p-button secondary">Cancel</Link></div></ValidatedForm></Panel><aside><Panel className="tinted"><p className="p-eyebrow">Why it matters</p><h2>Accurate details improve matches</h2><p>Your discipline, level, and skills determine which placements you’re eligible for.</p></Panel></aside></div>;
 }
 
+import { MAX_RESUME_BYTES, deleteStudentResume, getActiveStudentResume, uploadStudentResume } from '@/services/studentMedia';
+
 export function ResumePage() {
-    const { profile, status } = useStudentData();
+    const { profile, status, replaceProfile } = useStudentData();
+    const [busyAction, setBusyAction] = useState('');
+    const [message, setMessage] = useState('');
+    const [error, setError] = useState('');
+    const [resumeDoc, setResumeDoc] = useState<ApiDocument | null | undefined>(undefined);
+    const [fetchAttempt, setFetchAttempt] = useState(0);
+    useEffect(() => {
+        if (status !== 'ready') return;
+        let live = true;
+        getActiveStudentResume()
+            .then(doc => {
+                if (live) setResumeDoc(doc);
+            })
+            .catch((err: unknown) => {
+                if (!live) return;
+                setError(err instanceof ApiError ? apiErrorMessage(err.body, 'Your resume could not be loaded.') : 'Could not reach the server. Check your connection and try again.');
+                setResumeDoc(null);
+            });
+        return () => {
+            live = false;
+        };
+    }, [status, fetchAttempt]);
     if (status !== 'ready' || !profile) return <ProfileStatus />;
-    const resume = profile.resume;
-    return <div className="p-columns"><Panel><div className="p-between"><h2>Active resume</h2><Badge>{resume ? 'Active' : 'Resume needed'}</Badge></div><p>This file is shared with companies when you apply.</p>{resume && <div className="p-file"><FileText aria-hidden size={26}/><div className="p-grow"><strong>{resume.original_name}</strong><small>{(resume.size / 1024 / 1024).toFixed(1)} MB · Uploaded {dateLabel(resume.created_at)}</small></div></div>}<h3>Replace your active resume</h3><div className="p-dropzone" aria-disabled="true"><Upload size={30} aria-hidden/><p>Resume upload is coming soon.</p><Field className="p-field"><span>Choose resume file</span><input name="resume" type="file" accept=".pdf,.doc,.docx" disabled aria-describedby="resume-help" /></Field><p id="resume-help" className="p-small">PDF or DOC · Maximum 5 MB. The upload endpoint is not available yet.</p></div></Panel><aside><Panel className="tinted"><p className="p-eyebrow">Resume checklist</p><h2>Before you upload</h2><ul className="p-checklist"><li>Use a clear file name</li><li>Keep details up to date</li><li>Check contact information</li><li>Avoid password-protected files</li></ul></Panel></aside></div>;
+    const resume = resumeDoc === undefined ? profile.resume : resumeDoc;
+    const setBusy = (action: string, busy: boolean) => setBusyAction(current => (busy ? action : current === action ? '' : current));
+    const onResumeSelect = async (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+        if (!file || busyAction) return;
+        if (file.size > MAX_RESUME_BYTES) {
+            setError('Resumes must be 5 MB or smaller.');
+            return;
+        }
+        setMessage('');
+        setError('');
+        setBusy('upload', true);
+        try {
+            await uploadStudentResume(file);
+            setMessage('New resume uploaded and active.');
+            setFetchAttempt(value => value + 1);
+        } catch (caught) {
+            setError(caught instanceof ApiError ? apiErrorMessage(caught.body, 'The resume could not be uploaded.') : 'Could not reach the server. Check your connection and try again.');
+        } finally {
+            setBusy('upload', false);
+        }
+    };
+    const removeResume = async () => {
+        if (busyAction) return;
+        setMessage('');
+        setError('');
+        setBusy('delete', true);
+        try {
+            await deleteStudentResume();
+            setResumeDoc(null);
+            replaceProfile({ ...profile, resume: null });
+            setMessage('Resume removed. Upload a new one before applying.');
+        } catch (caught) {
+            setError(caught instanceof ApiError ? apiErrorMessage(caught.body, 'The resume could not be removed.') : 'Could not reach the server. Check your connection and try again.');
+        } finally {
+            setBusy('delete', false);
+        }
+    };
+    const download = async () => {
+        if (!resume || busyAction) return;
+        setBusy('download', true);
+        try {
+            await downloadDocument(resume);
+        } catch (caught) {
+            setError(caught instanceof ApiError ? apiErrorMessage(caught.body, 'The resume could not be downloaded.') : 'Could not reach the server. Try again.');
+        } finally {
+            setBusy('download', false);
+        }
+    };
+    return <div className="p-columns"><Panel><div className="p-between"><h2>Active resume</h2><Badge>{resume ? 'Active' : 'Resume needed'}</Badge></div><p>This file is shared with companies when you apply.</p>{resume && <div className="p-file"><FileText aria-hidden size={26}/><div className="p-grow"><strong>{resume.original_name}</strong><small>{(resume.size / 1024 / 1024).toFixed(1)} MB · Uploaded {dateLabel(resume.created_at)}</small></div></div>}{resume && <div className="p-actions"><button type="button" className="p-button secondary" disabled={!!busyAction} onClick={download}>{busyAction === 'download' ? 'Downloading…' : 'Download resume'}</button><button type="button" className="p-danger-link" disabled={!!busyAction} onClick={removeResume}>{busyAction === 'delete' ? 'Removing…' : 'Remove resume'}</button></div>}{message && <p role="status" className="p-small">{message}</p>}{error && <p role="alert" className="p-error">{error}</p>}<h3>Upload your resume</h3><div className="p-dropzone"><Upload size={30} aria-hidden/><p>{resume ? 'Replace it with an up-to-date version before applying.' : 'Add a resume so you can apply with one click.'}</p><Field className="p-field"><span>Choose resume file</span><input name="resume" type="file" accept=".pdf,.doc,.docx" disabled={!!busyAction} onChange={onResumeSelect} aria-describedby="resume-help" /></Field><p id="resume-help" className="p-small">PDF or DOC · Maximum 5 MB. Companies receive the version attached to each application.</p></div></Panel><aside><Panel className="tinted"><p className="p-eyebrow">Resume checklist</p><h2>Before you upload</h2><ul className="p-checklist"><li>Use a clear file name</li><li>Keep details up to date</li><li>Check contact information</li><li>Avoid password-protected files</li></ul></Panel></aside></div>;
 }

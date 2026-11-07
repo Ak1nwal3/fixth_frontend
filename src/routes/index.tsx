@@ -1,5 +1,6 @@
 ﻿import { createBrowserRouter, Navigate } from 'react-router'
 import RootLayout from '@/components/layout/RootLayout'
+import RequireCompanyAuth from '@/features/auth/RequireCompanyAuth'
 import RequireStudentAuth from '@/features/auth/RequireStudentAuth'
 import ResetPasswordPage from '@/features/auth/ResetPasswordPage'
 import SignInPage from '@/features/auth/SignInPage'
@@ -8,17 +9,27 @@ import OnboardingPage from '@/features/onboarding/OnboardingPage'
 import ProductLayout from '@/features/product/ProductLayout'
 import { StudentDataProvider } from '@/features/product/StudentDataProvider'
 import WorkspacesPage from '@/features/product/WorkspacesPage'
-import { DiscoverPage, PlacementDetailPage, ApplicationsPage } from '@/features/product/StudentPlacements'
+import { DiscoverPage, PlacementDetailPage, ApplicationsPage, ApplicationDetailPage } from '@/features/product/StudentPlacements'
 import { ProfilePage, EditProfilePage, ResumePage } from '@/features/product/StudentProfile'
-import { CompanyPlacementsPage, PlacementEditorPage, ApplicantsPage, ApplicantReviewPage, CompanyProfilePage } from '@/features/product/CompanyPages'
+import { CompanyPlacementsPage, PlacementEditorPage } from '@/features/product/CompanyPlacements'
+import { ApplicantsPage, ApplicantReviewPage } from '@/features/product/CompanyApplicants'
+import { CompanyProfilePage } from '@/features/product/CompanyProfile'
 import { VerificationQueuePage, VerificationReviewPage, ModerationPage, AccountsPage, AuditPage } from '@/features/product/AdminPages'
 import NotFoundPage from '@/pages/NotFoundPage'
+const studentProductLayout = (
+  <StudentDataProvider>
+    <ProductLayout role="student" />
+  </StudentDataProvider>
+)
 const studentWorkspace = (
   <RequireStudentAuth>
-    <StudentDataProvider>
-      <ProductLayout role="student" />
-    </StudentDataProvider>
+    {studentProductLayout}
   </RequireStudentAuth>
+)
+const companyWorkspace = (
+  <RequireCompanyAuth>
+    <ProductLayout role="company" />
+  </RequireCompanyAuth>
 )
 export const router = createBrowserRouter([{ path: '/', element: <RootLayout />, children: [
   { index: true, element: <LandingPage /> },
@@ -34,7 +45,7 @@ export const router = createBrowserRouter([{ path: '/', element: <RootLayout />,
   { path: 'student', children: [
     // Public discovery routes: the placements API allows anonymous reads and
     // returns extra fields for signed-in students.
-    { element: <ProductLayout role="student" />, children: [
+    { element: studentProductLayout, children: [
       { index: true, element: <Navigate to="discover" replace /> },
       { path: 'discover', element: <DiscoverPage /> },
       { path: 'placements/:id', element: <PlacementDetailPage /> },
@@ -43,20 +54,22 @@ export const router = createBrowserRouter([{ path: '/', element: <RootLayout />,
     { element: studentWorkspace, children: [
       { path: 'saved', element: <DiscoverPage savedOnly /> },
       { path: 'applications', element: <ApplicationsPage /> },
+      { path: 'applications/:id', element: <ApplicationDetailPage /> },
       { path: 'profile', element: <ProfilePage /> },
       { path: 'profile/edit', element: <EditProfilePage /> },
       { path: 'resume', element: <ResumePage /> },
     ] },
   ] },
-  { path: 'p/:slug', element: <ProductLayout role="student" />, children: [{ index: true, element: <PlacementDetailPage /> }] },
-  { path: 'company', element: <ProductLayout role="company" />, children: [
+  { path: 'p/:slug', element: studentProductLayout, children: [{ index: true, element: <PlacementDetailPage /> }] },
+  { path: 'company', element: companyWorkspace, children: [
     { index: true, element: <Navigate to="placements" replace /> },
     { path: 'placements', element: <CompanyPlacementsPage /> },
     { path: 'placements/new', element: <PlacementEditorPage key="new" /> },
     { path: 'placements/:id/edit', element: <PlacementEditorPage /> },
     { path: 'placements/:id/applicants', element: <ApplicantsPage /> },
-    { path: 'placements/:id/applicants/:candidateId', element: <ApplicantReviewPage /> },
+    { path: 'placements/:id/applicants/:applicationId', element: <ApplicantReviewPage /> },
     { path: 'applicants', element: <ApplicantsPage /> },
+    { path: 'applicants/:applicationId', element: <ApplicantReviewPage /> },
     { path: 'profile', element: <CompanyProfilePage /> },
   ] },
   { path: 'admin', element: <ProductLayout role="admin" />, children: [

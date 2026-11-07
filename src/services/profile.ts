@@ -109,6 +109,11 @@ export async function getStudentProfile(): Promise<StudentProfileData> {
   return mapProfile(profile)
 }
 
+/** Exposed for media endpoints that return the full updated profile. */
+export function mapStudentProfile(api: ApiStudentProfile): StudentProfileData {
+  return mapProfile(api)
+}
+
 export async function updateStudentProfile(patch: StudentProfilePatch): Promise<StudentProfileData> {
   const profile = await request<ApiStudentProfile>('/students/me/', {
     method: 'PATCH',

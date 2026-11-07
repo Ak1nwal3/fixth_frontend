@@ -80,3 +80,37 @@ export async function request<T>(path: string, init: RequestOptions = {}): Promi
 
   return (await response.json()) as T
 }
+
+/**
+ * Fetch a binary resource (e.g. an authorized document download at
+ * `/documents/{id}/download/`) with the same session handling as `request()`.
+ */
+export async function requestBlob(path: string): Promise<Blob> {
+  const session = getSession()
+  let response = await send(path, {}, session?.access ?? null)
+
+  if (response.status === 401 && session) {
+    if (await refreshSession()) {
+      response = await send(path, {}, getSession()?.access ?? null)
+    } else {
+      clearSession()
+      emitSessionExpired()
+    }
+  }
+
+  if (!response.ok) {
+    let body: unknown
+    try {
+      body = await response.json()
+    } catch {
+      body = undefined
+    }
+    const detail =
+      body && typeof body === 'object' && typeof (body as { detail?: unknown }).detail === 'string'
+        ? ((body as { detail: string }).detail)
+        : response.statusText
+    throw new ApiError(detail, response.status, body)
+  }
+
+  return response.blob()
+}

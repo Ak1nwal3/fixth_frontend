@@ -4,7 +4,7 @@
  * consumed atomically by the completion call.
  */
 import { request } from './http'
-import type { ApiStudentProfile, ApiUser } from './types'
+import type { ApiOrganizationOnboardingResult, ApiStudentProfile, ApiUser } from './types'
 
 export function requestStudentOtp(email: string): Promise<{ detail: string }> {
   return request<{ detail: string }>('/onboarding/students/request-otp/', {
@@ -57,5 +57,66 @@ export function completeStudentOnboarding(
     method: 'POST',
     auth: 'none',
     body: JSON.stringify(payload),
+  })
+}
+
+/* Organization onboarding uses the shared OTP endpoints with track=organization. */
+
+export function requestOrganizationOtp(email: string): Promise<{ detail: string }> {
+  return request<{ detail: string }>('/auth/otp/request/', {
+    method: 'POST',
+    auth: 'none',
+    body: JSON.stringify({ email, track: 'organization' }),
+  })
+}
+
+export interface OrganizationOtpVerification {
+  verification_token: string
+  is_new_user: boolean
+}
+
+export function verifyOrganizationOtp(
+  email: string,
+  code: string,
+): Promise<OrganizationOtpVerification> {
+  return request<OrganizationOtpVerification>('/auth/otp/verify/', {
+    method: 'POST',
+    auth: 'none',
+    body: JSON.stringify({ email, track: 'organization', code }),
+  })
+}
+
+export interface OrganizationOnboardingPayload {
+  verificationToken: string
+  organizationName: string
+  workEmail: string
+  industry: string
+  country: string
+  city: string
+  website?: string
+  description?: string
+  address?: string
+  logo?: File | null
+}
+
+export function completeOrganizationOnboarding(
+  payload: OrganizationOnboardingPayload,
+): Promise<ApiOrganizationOnboardingResult> {
+  const form = new FormData()
+  form.set('verification_token', payload.verificationToken)
+  form.set('organization_name', payload.organizationName)
+  form.set('work_email', payload.workEmail)
+  form.set('industry', payload.industry)
+  form.set('country', payload.country)
+  form.set('city', payload.city)
+  if (payload.website) form.set('website', payload.website)
+  if (payload.description) form.set('description', payload.description)
+  if (payload.address) form.set('address', payload.address)
+  if (payload.logo) form.set('logo', payload.logo)
+
+  return request<ApiOrganizationOnboardingResult>('/onboarding/organizations/complete/', {
+    method: 'POST',
+    auth: 'none',
+    body: form,
   })
 }

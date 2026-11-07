@@ -68,6 +68,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   )
 
+  const refreshUser = useCallback(async () => {
+    const session = getSession()
+    if (!session) return
+    const me = await getMe(session.role)
+    setSession({ ...session, user: me })
+    setUser(me)
+  }, [])
+
   const signOut = useCallback(async () => {
     const session = getSession()
     if (session) {
@@ -80,8 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<AuthValue>(
-    () => ({ status, user, signIn, establishSession, signOut }),
-    [status, user, signIn, establishSession, signOut],
+    () => ({ status, user, signIn, establishSession, refreshUser, signOut }),
+    [status, user, signIn, establishSession, refreshUser, signOut],
   )
 
   return <AuthContext value={value}>{children}</AuthContext>

@@ -46,3 +46,18 @@ export function confirmPasswordReset(
 export function getMe(role: AuthRole): Promise<ApiMe> {
   return request<ApiMe>(roleAuthPath(role, 'me'))
 }
+
+export interface UpdateMePayload {
+  first_name?: string
+  last_name?: string
+  current_password?: string
+  new_password?: string
+}
+
+/** Update the signed-in account's name or password. */
+export function updateMe(role: AuthRole, payload: UpdateMePayload): Promise<ApiMe> {
+  return request<ApiMe>(roleAuthPath(role, 'me'), {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useAuth } from '@/features/auth/useAuth'
 import { ApiError } from '@/services/http'
 import {
   getStudentProfile,
@@ -9,14 +10,23 @@ import {
 import { apiErrorMessage } from '@/services/types'
 import { StudentDataContext, type StudentDataValue } from './useStudentData'
 
-/** Profile data for the signed-in student, fetched once per layout mount. */
+/** Profile data for a signed-in student; skips profile loading for anonymous visitors. */
 export function StudentDataProvider({ children }: { children: ReactNode }) {
+  const { status: authStatus, user } = useAuth()
+  const isStudent = authStatus === 'signed-in' && user?.role === 'student'
   const [profile, setProfile] = useState<StudentProfileData | null>(null)
   const [status, setStatus] = useState<StudentDataValue['status']>('loading')
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
+    if (!isStudent) {
+      // Public discovery routes may mount the provider for anonymous visitors.
+      setProfile(null)
+      setStatus('ready')
+      setError('')
+      return
+    }
     let live = true
     setStatus('loading')
     getStudentProfile()
@@ -41,7 +51,7 @@ export function StudentDataProvider({ children }: { children: ReactNode }) {
     return () => {
       live = false
     }
-  }, [attempt])
+  }, [attempt, isStudent])
 
   const reload = useCallback(() => setAttempt(value => value + 1), [])
 
@@ -52,8 +62,13 @@ export function StudentDataProvider({ children }: { children: ReactNode }) {
     return updated
   }, [])
 
+  const replaceProfile = useCallback((updated: StudentProfileData) => {
+    setProfile(updated)
+    setStatus('ready')
+  }, [])
+
   return (
-    <StudentDataContext value={{ profile, status, error, reload, saveProfile }}>
+    <StudentDataContext value={{ profile, status, error, reload, saveProfile, replaceProfile }}>
       {children}
     </StudentDataContext>
   )

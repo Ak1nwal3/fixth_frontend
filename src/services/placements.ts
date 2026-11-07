@@ -4,7 +4,7 @@
  * and can_apply.
  */
 import { request } from './http'
-import type { ApiEligibility, ApiPlacement, ApiPlacementDetail, Paginated } from './types'
+import type { ApiEligibility, ApiPlacement, ApiPlacementDetail, ApiPlacementFacets, Paginated } from './types'
 
 export interface StudentPlacement {
   id: string
@@ -28,6 +28,9 @@ export interface StudentPlacement {
   requirements: string
   status: ApiPlacement['status']
   reports: number
+  /** Internship, SIWES, Industrial Training, or null for legacy listings. */
+  placementType: string | null
+  expiresAt: string | null
   /** Only populated for a signed-in student with a discipline. */
   match: number | null
   isSaved: boolean
@@ -44,6 +47,51 @@ export interface StudentPlacementDetail extends StudentPlacement {
 
 export type PlacementSort = 'newest' | 'title' | 'match'
 
+/** Company-facing write payload (camelCase; mapped to snake_case below). */
+export interface CompanyPlacementInput {
+  title: string
+  location: string
+  workStyle: string
+  duration: string
+  discipline: string
+  level: number
+  stipendAmount: string
+  currency: string
+  description: string
+  responsibilities: string
+  requirements: string
+  status?: 'Draft' | 'Active' | 'Closed'
+}
+
+export type CompanyPlacementStatus = ApiPlacement['status']
+
+export interface CompanyPlacementListParams {
+  status?: string
+  q?: string
+  sort?: 'newest' | 'oldest' | 'title'
+  page?: number
+  pageSize?: number
+}
+
+function mapCompanyPlacementPatch(input: Partial<CompanyPlacementInput>): Record<string, unknown> {
+  const body: Record<string, unknown> = {}
+  if (input.title !== undefined) body.title = input.title
+  if (input.location !== undefined) body.location = input.location
+  if (input.workStyle !== undefined) body.work_style = input.workStyle
+  if (input.duration !== undefined) body.duration = input.duration
+  if (input.discipline !== undefined) body.discipline = input.discipline
+  if (input.level !== undefined) body.level = input.level
+  if (input.stipendAmount !== undefined) {
+    body.stipend_amount = input.stipendAmount === '' ? null : input.stipendAmount
+  }
+  if (input.currency !== undefined) body.currency = input.currency
+  if (input.description !== undefined) body.description = input.description
+  if (input.responsibilities !== undefined) body.responsibilities = input.responsibilities
+  if (input.requirements !== undefined) body.requirements = input.requirements
+  if (input.status !== undefined) body.status = input.status
+  return body
+}
+
 export interface PlacementListParams {
   q?: string
   discipline?: string
@@ -57,7 +105,7 @@ export interface PlacementListParams {
   pageSize?: number
 }
 
-function mapPlacement(api: ApiPlacement): StudentPlacement {
+export function mapPlacement(api: ApiPlacement): StudentPlacement {
   return {
     id: api.id,
     slug: api.slug,
@@ -80,6 +128,8 @@ function mapPlacement(api: ApiPlacement): StudentPlacement {
     requirements: api.requirements,
     status: api.status,
     reports: api.reports,
+    placementType: api.type,
+    expiresAt: api.expires_at,
     match: api.match,
     isSaved: api.is_saved,
     hasApplied: api.has_applied,
@@ -123,4 +173,71 @@ export async function getPlacementById(id: string): Promise<StudentPlacementDeta
     auth: 'optional',
   })
   return mapPlacementDetail(detail)
+}
+
+export interface PlacementFacets {
+  disciplines: string[]
+  locations: string[]
+  durations: string[]
+  workStyles: string[]
+}
+
+/** Dynamic discovery filter values, derived from publicly active placements. */
+export async function getPlacementFacets(): Promise<PlacementFacets> {
+  const facets = await request<ApiPlacementFacets>('/placements/facets/', { auth: 'optional' })
+  return {
+    disciplines: facets.disciplines,
+    locations: facets.locations,
+    durations: facets.durations,
+    workStyles: facets.work_styles,
+  }
+}
+
+/** Company-side listing endpoints. Require an organization session. */
+export async function listCompanyPlacements(
+  params: CompanyPlacementListParams = {},
+): Promise<Paginated<StudentPlacement>> {
+  const query = new URLSearchParams()
+  if (params.status && params.status !== 'All') query.set('status', params.status)
+  if (params.q) query.set('q', params.q)
+  if (params.sort) query.set('sort', params.sort)
+  if (params.page && params.page > 1) query.set('page', String(params.page))
+  if (params.pageSize) query.set('page_size', String(params.pageSize))
+  const suffix = query.size ? `?${query}` : ''
+  const page = await request<Paginated<ApiPlacement>>(`/company/placements/${suffix}`)
+  return { ...page, results: page.results.map(mapPlacement) }
+}
+
+export async function getCompanyPlacement(id: string): Promise<StudentPlacement> {
+  const placement = await request<ApiPlacement>(`/company/placements/${encodeURIComponent(id)}/`)
+  return mapPlacement(placement)
+}
+
+export async function createCompanyPlacement(
+  input: CompanyPlacementInput,
+): Promise<StudentPlacement> {
+  const placement = await request<ApiPlacement>('/company/placements/', {
+    method: 'POST',
+    body: JSON.stringify(mapCompanyPlacementPatch(input)),
+  })
+  return mapPlacement(placement)
+}
+
+export async function updateCompanyPlacement(
+  id: string,
+  input: Partial<CompanyPlacementInput>,
+): Promise<StudentPlacement> {
+  const placement = await request<ApiPlacement>(`/company/placements/${encodeURIComponent(id)}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(mapCompanyPlacementPatch(input)),
+  })
+  return mapPlacement(placement)
+}
+
+export async function publishCompanyPlacement(id: string): Promise<StudentPlacement> {
+  const placement = await request<ApiPlacement>(
+    `/company/placements/${encodeURIComponent(id)}/publish/`,
+    { method: 'POST' },
+  )
+  return mapPlacement(placement)
 }

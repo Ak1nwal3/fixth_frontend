@@ -9,6 +9,8 @@ export interface AuthValue {
   signIn: (role: AuthRole, email: string, password: string) => Promise<void>
   /** Stores a session from a token-issuing flow (e.g. onboarding completion). */
   establishSession: (role: AuthRole, tokens: { access: string; refresh: string; user: ApiUser }) => void
+  /** Re-fetches `/auth/{role}/me/` and updates the cached user. */
+  refreshUser: () => Promise<void>
   /** Blacklists the refresh token server-side and clears the local session. */
   signOut: () => Promise<void>
 }

@@ -22,7 +22,7 @@
 | Shape | Fields |
 |---|---|
 | `CompanySummary` | `id, name, slug, logo_url, verification_status` |
-| `Placement` | `id, slug, title, company (string name), company_id, company_slug, company_logo_url, company_verified, location, work_style, duration, discipline, level, stipend, stipend_amount, currency, description, responsibilities, requirements, status, reports, match, is_saved, has_applied, published_at, created_at, updated_at` |
+| `Placement` | `id, slug, title, company (string name), company_id, company_slug, company_logo_url, company_verified, location, work_style, duration, discipline, level, type, stipend, stipend_amount, currency, description, responsibilities, requirements, status, reports, expires_at, match, is_saved, has_applied, published_at, created_at, updated_at` |
 | `PlacementDetail` | `Placement` + `eligibility {eligible, reason, required_level, required_discipline}` + `can_apply` |
 | `DocumentMeta` | `id, name, size, mime, url, uploaded_at` |
 | `StudentProfile` | `id, user_id, email, first_name, last_name, phone, location, institution, discipline, level, graduation_year, student_id, start_date, duration, work_styles[], portfolio, skills[], interests, resume (DocumentMeta or null), photo_url, verification_status, risk_level, profile_strength, created_at, updated_at` |
@@ -76,7 +76,7 @@ B1/B2 should mark the new profile/company `verification_status="Pending"` and cr
 
 C5 is not required for the app to function; the landing page is static.
 
-The backend exposes C1/C2 at `/api/v1/skills/` and `/api/v1/disciplines/`.
+The backend exposes C1/C2 at `/api/v1/skills/` and `/api/v1/disciplines/`; C3 and C4 are also implemented.
 
 ## D. Student placement discovery and saved roles
 
@@ -85,12 +85,14 @@ The backend exposes C1/C2 at `/api/v1/skills/` and `/api/v1/disciplines/`.
 | D1 | `GET /api/v1/placements/` | Discover active placements | Optional | query: `q, discipline, location, duration, work_style (repeatable/comma), saved=true, sort=match or title, page, page_size` → `200 Paginated<Placement>` | `400` invalid sort | `StudentPlacements.tsx:13-39`, `HeroSearch.tsx:22-30` |
 | D2 | `GET /api/v1/placements/{slug}/` | Placement detail by canonical slug | Optional | → `200 PlacementDetail` | `404`, `410` if Draft/Unpublished for non-owner | `StudentPlacements.tsx:41-52`, `routes/index.tsx:29` |
 | D3 | `GET /api/v1/placements/by-id/{id}/` | Detail by UUID (used by `/student/placements/:id`) | Optional | → `200 PlacementDetail` | `404` | `routes/index.tsx:24`, `StudentPlacements.tsx:46` |
-| D4 | `POST /api/v1/placements/{id}/save/` | Save role | Student | `{}` → `201 {saved: true}` | `401`, `404`, `409` already saved | `store.tsx:36`, `StudentPlacements.tsx:11` |
-| D5 | `DELETE /api/v1/placements/{id}/save/` | Unsave role | Student | → `204` | `401`, `404` | `store.tsx:36` |
-| D6 | `GET /api/v1/students/me/saved-placements/` | Saved list alias | Student | → `200 Paginated<Placement>` | `401` | `StudentPlacements.tsx:13,23` (savedOnly) |
+| D4 | `POST /api/v1/placements/{id}/save/` | Save role | Student | `{}` → `201 SavedPlacement` | `401`, `403`, `404`, `409` already saved | `store.tsx:36`, `StudentPlacements.tsx:11` |
+| D5 | `DELETE /api/v1/placements/{id}/save/` | Unsave role | Student | → `204` | `401`, `403`, `404` | `store.tsx:36` |
+| D6 | `GET /api/v1/students/me/saved-placements/` | Saved list alias | Student | → `200 Paginated<SavedPlacement>` | `401`, `403` | `StudentPlacements.tsx:13,23` (savedOnly) |
 | D7 | `POST /api/v1/placements/{id}/report/` | Report a listing | Student | `{reason, details}` → `201 {report}` | `401`, `404`, `409` duplicate open report | Inferred from `reports` field (`data.ts:5`, `AdminPages.tsx:51`) — no reporting UI exists yet |
 
 D1 behavior:
+
+> **Implemented:** D1–D6 are live. D7 and student application endpoints remain planned.
 
 - Default scope is `status="Active"` for students/anonymous.
 - `saved=true` requires a student token and filters to the caller’s saved roles.
@@ -111,11 +113,13 @@ D2/D3 must include:
 | E1 | `POST /api/v1/applications/` | One-click apply | Student | `{placement: uuid, resume?: document_id}` → `201 Application` | `400` no resume, `401`, `403` ineligible/deleted profile, `404`, `409` already applied, `410` closed/expired | `store.tsx:37`, `StudentPlacements.tsx:48-52` |
 | E2 | `GET /api/v1/applications/?status=&placement=&page=` | Student application list | Student | → `200 Paginated<Application>` | `401` | `StudentPlacements.tsx:54-59` |
 | E3 | `GET /api/v1/applications/{id}/` | Application detail | Owner / company / admin | → `200 Application` | `401`, `403`, `404` | `StudentPlacements.tsx:59` |
-| E4 | `GET /api/v1/applications/summary/` | Metrics: total, viewed, shortlisted, accepted | Student | → `200 {total, submitted, viewed, shortlisted, accepted, rejected}` | `401` | `StudentPlacements.tsx:59` |
+| E4 | `GET /api/v1/applications/summary/` | Metrics: total, pending, under review, shortlisted, accepted | Student | → `200 {total, pending, under_review, shortlisted, accepted, rejected, withdrawn}` | `401` | `StudentPlacements.tsx:59` |
 | E5 | `GET /api/v1/applications/{id}/events/` | Status timeline | Owner / company / admin | → `200 [ApplicationEvent]` | `401`, `403` | Inferred from status rail (`StudentPlacements.tsx:59`) |
 | E6 | `POST /api/v1/applications/{id}/withdraw/` | Future withdrawal | Student | → `200 Application` | `400` illegal state | Inferred; no UI |
 
-E1 must enforce the same eligibility and resume rules the UI displays. The UI currently also requires a live `resumeFile` object (`StudentPlacements.tsx:51`), which does not survive refresh; the backend should treat a stored resume document as sufficient and the frontend must stop requiring the local `File`.
+> **Implemented:** E1–E6 are live for student-owned applications. E3/E5 are student-only in the current implementation; company access uses the dedicated company application endpoints.
+>
+> E1 uses the student's stored resume when `resume_id` is omitted; the frontend does not need a live local `resumeFile` object.
 
 ## F. Student profile, photo, resume, verification
 
@@ -133,7 +137,9 @@ E1 must enforce the same eligibility and resume rules the UI displays. The UI cu
 | F10 | `POST /api/v1/students/me/verification/` | Submit student ID/enrollment evidence | Student | multipart `documents[]` → `202 VerificationRequest` | `400`, `413`, `415` | Inferred from `AdminPages.tsx:28-30`, `OnboardingPage.tsx:68-74` |
 | F11 | `GET /api/v1/students/{id}/` | Applicant profile for company/admin | Company / admin | → `200 StudentProfile` (privacy subset) | `401`, `403`, `404` | `CompanyPages.tsx:43-52`, `AdminPages.tsx:16-30` |
 
-Photo and resume must be **replaced by creating a new Document**, not overwriting bytes, so existing applications keep the resume version they were submitted with. Resume files are private; do not serve them from a public `/media/` path.
+> **Implemented:** F1–F9 and student account deletion are live. Student verification submission is implemented at `POST /api/v1/students/me/verification/`; admin review and applicant-by-ID endpoints remain planned.
+>
+> Photo and resume are **replaced by creating a new Document**, not overwriting bytes, so existing applications keep the resume version they were submitted with. Resume files are private; download access is authorized separately. Malware scanning is not part of the MVP.
 
 ## G. Company profile and placement management
 
@@ -159,7 +165,7 @@ G4/G6 rules:
 
 ## H. Company applicants
 
-> **Implemented:** H1–H4 are live. The company list/detail/update endpoints are documented in [`api-reference.md`](./api-reference.md). H5 (gated contact details) remains planned.
+> **Implemented:** H1–H5 are live. The company list/detail/update and gated contact endpoints are documented in [`api-reference.md`](./api-reference.md).
 
 | ID | Method & path | Purpose | Auth | Request → success | Errors | Source |
 |---|---|---|---|---|---|---|

@@ -6,6 +6,11 @@ export function Badge({ children, tone }: { children: ReactNode; tone?: 'success
   return <span className={`p-badge ${resolved}`}>{resolved === 'success' ? <CircleCheck aria-hidden size={13} /> : resolved === 'warning' || resolved === 'danger' ? <CircleAlert aria-hidden size={13} /> : null}{children}</span>
 }
 export function Panel({ children, className = '' }: { children: ReactNode; className?: string }) { return <section className={`p-panel ${className}`}>{children}</section> }
+export function Avatar({ src, fallback, className = '' }: { src?: string | null; fallback: ReactNode; className?: string }) {
+  const [failed, setFailed] = useState(false)
+  useEffect(() => { setFailed(false) }, [src])
+  return <span className={`p-avatar${className ? ` ${className}` : ''}`}>{src && !failed ? <img src={src} alt="" onError={() => setFailed(true)} /> : fallback}</span>
+}
 export function Empty({ title, children }: { title: string; children?: ReactNode }) { return <div className="p-empty"><CircleAlert size={28} aria-hidden /><h2>{title}</h2>{children}</div> }
 export function Metrics({ items }: { items: [string, number | string][] }) { return <dl className="p-metrics">{items.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl> }
 export function Tabs({ items, value, onChange, label }: { items: string[]; value: string; onChange: (value: string) => void; label: string }) {

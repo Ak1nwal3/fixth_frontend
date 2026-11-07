@@ -8,6 +8,8 @@ export interface StudentDataValue {
   reload: () => void
   /** PATCHes the profile and updates provider state. Throws ApiError on failure. */
   saveProfile: (patch: StudentProfilePatch) => Promise<StudentProfileData>
+  /** Puts an already-fetched profile (e.g. after a media upload) into state. */
+  replaceProfile: (profile: StudentProfileData) => void
 }
 
 export const StudentDataContext = createContext<StudentDataValue | null>(null)
