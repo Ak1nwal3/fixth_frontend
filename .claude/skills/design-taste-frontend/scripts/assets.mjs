@@ -312,7 +312,7 @@ function pickRendition(list, res) {
   const fit = playable.filter((r) => side(r) <= res).sort((a, b) => side(b) - side(a) || (a.bytes ?? 1e15) - (b.bytes ?? 1e15));
   return fit[0] || playable.sort((a, b) => side(a) - side(b) || (a.bytes ?? 1e15) - (b.bytes ?? 1e15))[0] || null;
 }
-function useRendition(it, pick, largest) {
+function applyRendition(it, pick, largest) {
   Object.assign(it, { media: 'video', image: pick.url, mime: pick.type, imageWidth: pick.w || null, imageHeight: pick.h || null, bytes: pick.bytes || null, estimated: Boolean(pick.estimated), duration: it.duration || pick.duration || null });
   if (largest) { it.width = largest.w || it.width; it.height = largest.h || it.height; }
   return it;
@@ -494,7 +494,7 @@ function fromCommonsVideo(pg, opts) {
       bytes: original ? Number(ii.size) || null : d.bandwidth && it.duration ? Math.round((d.bandwidth * it.duration) / 8) : null, estimated: !original };
   });
   const pick = pickRendition(renditions, opts.res);
-  return pick ? useRendition(it, pick, { w: ii.width, h: ii.height }) : null;
+  return pick ? applyRendition(it, pick, { w: ii.width, h: ii.height }) : null;
 }
 
 // ---------- video: Internet Archive ----------
@@ -543,7 +543,7 @@ function fromArchive(m, opts) {
   // the same film is often stored in several formats; different names mean different films
   const films = new Set(originals.map((f) => f.name.split('/').pop().split('.')[0])).size;
   if (films > 1) it.notes.push(`This item holds ${films} films; the first is shown. The page lists the others.`);
-  return useRendition(it, pick, largest);
+  return applyRendition(it, pick, largest);
 }
 
 // ---------- video: NASA Image and Video Library ----------
@@ -572,7 +572,7 @@ function fromNasa(x, files, opts) {
     poster: nasaUrl(find('~large.jpg') || find('~medium.jpg') || find('~thumb.jpg')),
   });
   it.notes.push('NASA footage is generally free of copyright in the US. Never use NASA logos or suggest NASA endorses the client; check the page for third-party material.');
-  return useRendition(it, pick, renditions[0]);
+  return applyRendition(it, pick, renditions[0]);
 }
 function videoNotes(it, opts) {
   const n = [];
