@@ -6,8 +6,8 @@
 import { request } from './http'
 import type { ApiOrganizationOnboardingResult, ApiStudentProfile, ApiUser } from './types'
 
-export function requestStudentOtp(email: string): Promise<{ detail: string }> {
-  return request<{ detail: string }>('/onboarding/students/request-otp/', {
+export function requestStudentOtp(email: string): Promise<{ detail: string; otp_code?: string }> {
+  return request<{ detail: string; otp_code?: string }>('/onboarding/students/request-otp/', {
     method: 'POST',
     auth: 'none',
     body: JSON.stringify({ email }),
@@ -62,8 +62,8 @@ export function completeStudentOnboarding(
 
 /* Organization onboarding uses the shared OTP endpoints with track=organization. */
 
-export function requestOrganizationOtp(email: string): Promise<{ detail: string }> {
-  return request<{ detail: string }>('/auth/otp/request/', {
+export function requestOrganizationOtp(email: string): Promise<{ detail: string; otp_code?: string }> {
+  return request<{ detail: string; otp_code?: string }>('/auth/otp/request/', {
     method: 'POST',
     auth: 'none',
     body: JSON.stringify({ email, track: 'organization' }),

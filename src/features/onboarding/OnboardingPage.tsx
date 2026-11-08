@@ -117,10 +117,16 @@ function OnboardingFlow({ track, slug }: { track: Track; slug: string }) {
     setBusy(true)
     setMessage('')
     try {
-      if (organization) await requestOrganizationOtp(draft.email)
-      else await requestStudentOtp(draft.email)
+      const result = organization
+        ? await requestOrganizationOtp(draft.email)
+        : await requestStudentOtp(draft.email)
       // Persist the send time so the resend countdown survives step remounts.
-      patchDraft({ lastCodeAt: String(timestamp()) })
+      // Demo fallback: when the deployment cannot deliver email, the backend
+      // returns the code so the code step can display it.
+      patchDraft({
+        lastCodeAt: String(timestamp()),
+        demoOtp: result?.otp_code ?? '',
+      })
       return true
     } catch (error) {
       notify(
@@ -327,7 +333,7 @@ function OnboardingFlow({ track, slug }: { track: Track; slug: string }) {
           : <input name={field.name} required={!field.optional} type={field.type || 'text'} autoComplete={autocomplete[field.name] || 'off'} value={draft[field.name] || ''} placeholder={field.placeholder} aria-invalid={!!errors[field.name] || undefined} aria-describedby={errors[field.name] ? `${field.name}-error` : undefined} onChange={e => update(field.name, e.target.value)} />}
         {errors[field.name] && <span id={`${field.name}-error`} className="auth-field-error">{errors[field.name]}</span>}
       </label>)}
-      {slug === 'code' && <><VerificationCode value={code} onChange={value => { setCode(value); setErrors(current => ({ ...current, code: '' })) }} invalid={!!errors.code} />{errors.code && <p id="code-error" className="auth-field-error">{errors.code}</p>}<p id="verification-note" className="auth-note">We emailed a 6-digit code. It expires after 10 minutes.</p></>}
+      {slug === 'code' && <><VerificationCode value={code} onChange={value => { setCode(value); setErrors(current => ({ ...current, code: '' })) }} invalid={!!errors.code} />{errors.code && <p id="code-error" className="auth-field-error">{errors.code}</p>}<p id="verification-note" className="auth-note">We emailed a 6-digit code. It expires after 10 minutes.</p>{draft.demoOtp && <p role="status" className="auth-alert" data-tone="status"><CheckCircle2 size={16} aria-hidden />Email delivery is unavailable on this deployment. Your demo code: <strong>{draft.demoOtp}</strong></p>}</>}
       {slug === 'password' && <>
         <label className="auth-field"><span>Password</span><input name="password" type={showPassword ? 'text' : 'password'} required minLength={8} autoComplete="new-password" value={password} aria-invalid={!!errors.password || undefined} aria-describedby="password-rules" onChange={e => { setPassword(e.target.value); setErrors(current => ({ ...current, password: '' })); setMessage('') }} />{errors.password && <span className="auth-field-error">{errors.password}</span>}</label>
         <label className="auth-field"><span>Confirm password</span><input name="confirmPassword" type={showPassword ? 'text' : 'password'} required minLength={8} autoComplete="new-password" value={confirm} aria-invalid={!!errors.confirmPassword || undefined} aria-describedby="password-rules" onChange={e => { setConfirm(e.target.value); setErrors(current => ({ ...current, confirmPassword: '' })); setMessage('') }} />{errors.confirmPassword && <span className="auth-field-error">{errors.confirmPassword}</span>}</label>
