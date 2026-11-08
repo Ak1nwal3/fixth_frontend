@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fixth landing page v3</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Barlow:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F3F3F3}
+*{box-sizing:border-box}
+::selection{background:#BCF7FB;color:#00002E}
+html{scrollbar-color:#0F35DB #E6E8F0}
+a{color:inherit;text-decoration:none}a:hover{color:inherit}
+.v3{font-family:'Barlow',system-ui,sans-serif;font-size:18px;line-height:1.55;color:#00002E;caret-color:#0F35DB;font-variant-numeric:tabular-nums}
+.cd{font-family:'Barlow Condensed','Barlow',sans-serif;letter-spacing:-0.01em}
+.caps{text-transform:uppercase}
+.frame{width:100%;max-width:1312px;margin:0 auto;padding:0 32px}
+.v3 :focus-visible{outline:3px solid #0F35DB;outline-offset:3px}
+.btn{transition:transform .18s cubic-bezier(.2,.8,.2,1),background-color .18s}
+.btn:hover{transform:translateY(-2px)}
+.btn-blue:hover{background:#0C2AAE !important}
+.field{width:100%;border:0;background:transparent;font:inherit;color:#00002E;outline:0}
+.field::placeholder{color:#5A5E78}
+@keyframes plant{from{opacity:0;transform:translate3d(0,48px,0)}to{opacity:1;transform:none}}
+.planted{animation:plant .9s cubic-bezier(.16,1,.3,1) both}
+.sign{transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s}
+.sign:hover{transform:translateY(-10px) rotate(-2deg);box-shadow:0 18px 30px -14px rgba(0,0,0,.3)}
+.plate{transition:transform .3s cubic-bezier(.16,1,.3,1)}
+.panel:hover .plate{transform:translateY(-8px)}
+.panel img{transition:transform .6s cubic-bezier(.16,1,.3,1)}
+.panel:hover img{transform:scale(1.04)}
+.faq details{border-top:3px solid #00002E}
+.faq details:last-child{border-bottom:3px solid #00002E}
+.faq summary{list-style:none;cursor:pointer}
+.faq summary::-webkit-details-marker{display:none}
+.faq .pm{transition:transform .25s ease}
+.faq details[open] .pm{transform:rotate(45deg)}
+@keyframes rise{from{transform:translate3d(0,40px,0)}to{transform:none}}
+@supports (animation-timeline: view()){.rise{animation:rise linear both;animation-timeline:view();animation-range:entry 0% cover 20%}}
+@media (prefers-reduced-motion:reduce){.planted,.rise{animation:none !important}.sign,.plate,.panel img{transition:none !important}}
+.hero{display:grid;grid-template-columns:minmax(0,640px) 1fr}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.signs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.types{display:grid;grid-template-columns:1.25fr 1fr 1fr}
+.foot{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:960px){
+  .hero,.two,.types{grid-template-columns:minmax(0,1fr)}
+  .signs,.foot{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .hide-sm{display:none !important}
+  .h1{font-size:64px !important}
+  .h2{font-size:48px !important}
+  .search{grid-template-columns:minmax(0,1fr) !important}
+  .hoard{grid-template-columns:minmax(0,1fr) !important}
+  .hoard>a{border-left:0 !important;border-top:3px solid #00002E}
+}
+</style>
+</helmet>
+
+<div class="v3">
+
+<!-- ============ NOTICE STRIP + NAV ============ -->
+<div style="background: #00002E; color: #F3F3F3; font-size: 16px;">
+  <div class="frame" style="display: flex; justify-content: center; align-items: center; gap: 10px; min-height: 40px;">
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#0F35DB"/><path d="M8 7v10M8 7l8 10M16 7v10M6 11h12M6 14h12" stroke="#FFFFFF" stroke-width="1.6" fill="none"/></svg>
+    <span>Fixth will never ask you to pay for a placement. If anyone asks for a “processing fee”, report it.</span>
+  </div>
+</div>
+<header style="background: #F3F3F3;">
+  <div class="frame" style="display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 84px;">
+    <a href="#top" aria-label="fixth home" style="display: inline-flex; color: #0F35DB;"><svg viewBox="0 0 68 29" width="80" height="34" aria-hidden="true"><path fill="currentColor" d="M7.979 5.802l3.116 0 0 5.8-2.767 0.013c-1.528 0-2.767 1.295-2.767 2.893 0 1.598 1.24 2.893 2.767 2.893l2.767 0.013 0 5.8-3.116 0c-0.82642 0.00138-1.64753-0.13204-2.431-0.395l0 6.181-5.548 0 0-15.364 0.015 0c0.25-4.371 3.72-7.836 7.962-7.836l0.002 0.002z m36.079 0.38c0.78321-0.26252 1.60397-0.3956 2.43-0.394l3.117 0 0 5.8-2.767 0.013c-1.528 0-2.767 1.295-2.767 2.893 0 1.598 1.24 2.893 2.767 2.893l2.767 0.012 0 5.8-3.115 0-0.002 0.002c-4.242 0-7.712-3.464-7.962-7.835l-0.015 0 0-15.364 5.548 0-0.001 6.18z m-28.442 1.83c1.528 0 2.767 1.295 2.767 2.893l0 12.295-5.54601 0 0-12.295 0.01201 0c0-1.598 1.239-2.893 2.76699-2.893m21.154 3.587l-2.79 0.006-0.025 0.027c-1.515 0.014-2.739 1.297-2.742 2.877l0 0.007c0 1.593 1.24 2.883 2.767 2.883q0.127 0 0.25-0.012l2.53 0.012 0 5.8-3.141 0-0.038-0.012c-1.973-0.105-3.765-0.927-5.142-2.22-1.39721 1.32589-3.2198 2.11262-5.14299 2.22l-0.037 0.013-3.132-0.021 0-5.798 2.52 0.007c0.08311 0.00781 0.16652 0.01215 0.25 0.013 1.528 0 2.767-1.29 2.767-2.884l0-0.006c-0.003-1.582-1.227-2.863-2.741-2.877l-0.026-0.027-2.78 0.012 0-5.798 2.83 0 0.005 0.001 0.001-0.001c2.11 0.023 4.03 0.864 5.487 2.23 1.458-1.366 3.379-2.207 5.488-2.23l0.003-0.002 2.84-0.02-0.00101 5.8z m20.124-5.405c0.77583-0.25929 1.58801-0.39331 2.40601-0.397l0.74 0c4.398 0.013 7.96 3.74 7.96 8.336l0 9.067-5.55 0 0-8.702-0.013 0c0-1.594-1.235-2.888-2.762-2.891-1.527 0.003-2.762 1.297-2.76201 2.892l-0.01299 0 0 8.7-5.55 0 0-23.196 5.544 0-0.00001 6.191z m-41.277-6.192c1.528 0 2.767 1.295 2.767 2.893 0 1.598-1.239 2.893-2.767 2.893-1.528 0-2.767-1.296-2.767-2.893 0-1.598 1.24-2.893 2.767-2.893m35.733 0l-0.001 0 0.00101-0.002-0.00001 0.002z"/></svg></a>
+    <nav aria-label="Main" class="hide-sm" style="display: flex; gap: 36px; font-weight: 500; font-size: 18px;">
+      <a href="#students">Students</a>
+      <a href="#how">How it works</a>
+      <a href="#companies">Companies</a>
+      <a href="#faq">Questions</a>
+    </nav>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <a href="#login" class="hide-sm" style="padding: 12px 16px; font-weight: 500; font-size: 18px;">Log in</a>
+      <a href="#signup" class="btn btn-blue cd caps" style="display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; background: #0F35DB; color: #FFFFFF; font-weight: 600; font-size: 20px; letter-spacing: .02em;">Create profile</a>
+    </div>
+  </div>
+</header>
+
+<!-- ============ HERO: project signboard over a working site ============ -->
+<section id="top" style="position: relative; background: #00002E; overflow: hidden;">
+  <img src="/_blob/5844faf225dc808cea391afa4c0c9225" alt="Two young women engineers in yellow hard hats, one in blue overalls, smiling on a building site" width="1400" height="933" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 78% 30%;">
+  <div class="frame hero" style="position: relative; padding-top: 56px;">
+    <div class="planted" style="display: flex; flex-direction: column;">
+      <!-- the board -->
+      <div style="background: #FFFFFF; border: 6px solid #00002E;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; background: #0F35DB; color: #FFFFFF; padding: 14px 24px;">
+          <svg viewBox="0 0 68 29" width="64" height="27" aria-hidden="true"><path fill="#FFFFFF" d="M7.979 5.802l3.116 0 0 5.8-2.767 0.013c-1.528 0-2.767 1.295-2.767 2.893 0 1.598 1.24 2.893 2.767 2.893l2.767 0.013 0 5.8-3.116 0c-0.82642 0.00138-1.64753-0.13204-2.431-0.395l0 6.181-5.548 0 0-15.364 0.015 0c0.25-4.371 3.72-7.836 7.962-7.836l0.002 0.002z m36.079 0.38c0.78321-0.26252 1.60397-0.3956 2.43-0.394l3.117 0 0 5.8-2.767 0.013c-1.528 0-2.767 1.295-2.767 2.893 0 1.598 1.24 2.893 2.767 2.893l2.767 0.012 0 5.8-3.115 0-0.002 0.002c-4.242 0-7.712-3.464-7.962-7.835l-0.015 0 0-15.364 5.548 0-0.001 6.18z m-28.442 1.83c1.528 0 2.767 1.295 2.767 2.893l0 12.295-5.54601 0 0-12.295 0.01201 0c0-1.598 1.239-2.893 2.76699-2.893m21.154 3.587l-2.79 0.006-0.025 0.027c-1.515 0.014-2.739 1.297-2.742 2.877l0 0.007c0 1.593 1.24 2.883 2.767 2.883q0.127 0 0.25-0.012l2.53 0.012 0 5.8-3.141 0-0.038-0.012c-1.973-0.105-3.765-0.927-5.142-2.22-1.39721 1.32589-3.2198 2.11262-5.14299 2.22l-0.037 0.013-3.132-0.021 0-5.798 2.52 0.007c0.08311 0.00781 0.16652 0.01215 0.25 0.013 1.528 0 2.767-1.29 2.767-2.884l0-0.006c-0.003-1.582-1.227-2.863-2.741-2.877l-0.026-0.027-2.78 0.012 0-5.798 2.83 0 0.005 0.001 0.001-0.001c2.11 0.023 4.03 0.864 5.487 2.23 1.458-1.366 3.379-2.207 5.488-2.23l0.003-0.002 2.84-0.02-0.00101 5.8z m20.124-5.405c0.77583-0.25929 1.58801-0.39331 2.40601-0.397l0.74 0c4.398 0.013 7.96 3.74 7.96 8.336l0 9.067-5.55 0 0-8.702-0.013 0c0-1.594-1.235-2.888-2.762-2.891-1.527 0.003-2.762 1.297-2.76201 2.892l-0.01299 0 0 8.7-5.55 0 0-23.196 5.544 0-0.00001 6.191z m-41.277-6.192c1.528 0 2.767 1.295 2.767 2.893 0 1.598-1.239 2.893-2.767 2.893-1.528 0-2.767-1.296-2.767-2.893 0-1.598 1.24-2.893 2.767-2.893m35.733 0l-0.001 0 0.00101-0.002-0.00001 0.002z"/></svg>
+          <span class="cd caps" style="font-weight: 600; font-size: 20px; letter-spacing: .06em;">Placement notice</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 96px 1fr; gap: 16px; padding: 24px 28px 8px; border-bottom: 3px solid #00002E;">
+          <span class="cd caps" style="padding-top: 10px; font-weight: 600; font-size: 18px; color: #0F35DB; letter-spacing: .08em;">Project</span>
+          <div>
+          <h1 class="cd caps h1" style="margin: 0; font-weight: 700; font-size: 80px; line-height: .9; letter-spacing: -0.015em;">Your SIWES placement</h1>
+          <p style="margin: 16px 0 16px; max-width: 46ch;">Verified SIWES, IT and internship placements from real engineering companies across Nigeria. Apply once, see every step, and never pay a kobo to get placed.</p>
+          </div>
+        </div>
+        <dl style="margin: 0; font-size: 18px;">
+          <div style="display: grid; grid-template-columns: 96px 1fr; gap: 16px; padding: 12px 28px; border-bottom: 2px solid #00002E;"><dt class="cd caps" style="font-weight: 600; color: #0F35DB; letter-spacing: .08em;">Client</dt><dd style="margin: 0;">You. Any engineering discipline, 300–500 level</dd></div>
+          <div style="display: grid; grid-template-columns: 96px 1fr; gap: 16px; padding: 12px 28px; border-bottom: 2px solid #00002E;"><dt class="cd caps" style="font-weight: 600; color: #0F35DB; letter-spacing: .08em;">Contractor</dt><dd style="margin: 0;">CAC-verified engineering companies</dd></div>
+          <div style="display: grid; grid-template-columns: 96px 1fr; gap: 16px; padding: 12px 28px; border-bottom: 3px solid #00002E;"><dt class="cd caps" style="font-weight: 600; color: #0F35DB; letter-spacing: .08em;">Duration</dt><dd style="margin: 0;">3 to 6 months, starting when your session allows</dd></div>
+        </dl>
+        <form role="search" aria-label="Search placements" class="search" style="display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) auto; background: #F3F3F3;">
+          <label style="display: flex; flex-direction: column; padding: 12px 18px; border-right: 2px solid #00002E;"><span class="cd caps" style="font-size: 16px; font-weight: 600; letter-spacing: .06em; color: #3A3E5C;">What</span><input class="field" type="text" placeholder="Role, skill or company" style="font-size: 18px;"></label>
+          <label style="display: flex; flex-direction: column; padding: 12px 18px; border-right: 2px solid #00002E;"><span class="cd caps" style="font-size: 16px; font-weight: 600; letter-spacing: .06em; color: #3A3E5C;">Discipline</span><select class="field" style="font-size: 18px;"><option>Mechanical</option><option>Electrical</option><option>Civil</option><option>Chemical</option><option>Petroleum</option><option>Computer</option></select></label>
+          <label style="display: flex; flex-direction: column; padding: 12px 18px;"><span class="cd caps" style="font-size: 16px; font-weight: 600; letter-spacing: .06em; color: #3A3E5C;">State</span><select class="field" style="font-size: 18px;"><option>Anywhere</option><option>Lagos</option><option>FCT Abuja</option><option>Rivers</option><option>Ogun</option><option>Kano</option></select></label>
+          <button type="submit" class="btn-blue cd caps" style="border: 0; padding: 0 28px; background: #0F35DB; color: #FFFFFF; font-weight: 600; font-size: 20px; letter-spacing: .04em; cursor: pointer;">Search</button>
+        </form>
+      </div>
+      <!-- the posts -->
+      <div aria-hidden="true" style="display: flex; justify-content: space-between; padding: 0 72px; height: 88px;">
+        <span style="width: 22px; background: #00002E;"></span>
+        <span style="width: 22px; background: #00002E;"></span>
+      </div>
+    </div>
+    <div class="hide-sm" style="display: flex; align-items: flex-end; justify-content: flex-end; padding-bottom: 28px;">
+      <a href="#companies" class="btn" style="display: inline-flex; align-items: center; gap: 12px; padding: 16px 20px; background: #FFFFFF; font-weight: 500; font-size: 18px; border: 3px solid #00002E;">Hiring engineering students? <strong style="color: #0F35DB;">Post a placement free</strong>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F35DB" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOARDING: open placements, fixed slots ============ -->
+<section aria-label="Sample placements" style="background: #0F35DB; color: #FFFFFF;">
+  <div class="frame hoard" style="display: grid; grid-template-columns: auto repeat(3, minmax(0,1fr)); gap: 0; align-items: stretch;">
+    <span class="cd caps" style="display: flex; align-items: center; padding: 20px 24px 20px 0; font-weight: 700; font-size: 20px; letter-spacing: .04em; color: #BCF7FB;">Open now<br>(sample)</span>
+    <a href="#top" style="display: flex; flex-direction: column; gap: 4px; padding: 20px 24px; border-left: 3px solid #00002E;"><span class="cd caps" style="font-weight: 700; font-size: 24px; line-height: 1.1;">SIWES · Mechanical maintenance</span><span style="font-size: 16px;">Sagamu, Ogun · 6 months · ₦40,000/mo</span></a>
+    <a href="#top" style="display: flex; flex-direction: column; gap: 4px; padding: 20px 24px; border-left: 3px solid #00002E;"><span class="cd caps" style="font-weight: 700; font-size: 24px; line-height: 1.1;">IT · Plant operations</span><span style="font-size: 16px;">Warri, Delta · 6 months · ₦35,000/mo</span></a>
+    <a href="#top" style="display: flex; flex-direction: column; gap: 4px; padding: 20px 24px; border-left: 3px solid #00002E;"><span class="cd caps" style="font-weight: 700; font-size: 24px; line-height: 1.1;">Internship · Solar installation</span><span style="font-size: 16px;">Ikeja, Lagos · 3 months · ₦60,000/mo</span></a>
+  </div>
+</section>
+
+<!-- ============ THE OLD WAY ============ -->
+<section id="students" style="padding: 144px 0;">
+  <div class="frame two" style="gap: 80px; align-items: center;">
+    <div>
+      <h2 class="cd caps h2 rise" style="margin: 0; font-weight: 700; font-size: 72px; line-height: .92;">Placement by merit, not by connection.</h2>
+      <p style="margin: 32px 0 0; max-width: 46ch;">Right now, openings hide in WhatsApp groups, on notice boards and in a lecturer’s phone. Half of the “opportunities” ask for money first. You end up begging for a placement letter, or taking any place that will sign your logbook.</p>
+      <p style="margin: 20px 0 0; max-width: 46ch; font-weight: 600;">Fixth puts verified placements from verified companies in one place, and you never pay to apply.</p>
+      <a href="#signup" class="btn btn-blue cd caps" style="margin-top: 36px; display: inline-flex; align-items: center; min-height: 56px; padding: 0 28px; background: #0F35DB; color: #FFFFFF; font-weight: 600; font-size: 20px; letter-spacing: .04em;">Find a verified placement</a>
+    </div>
+    <!-- a familiar group chat -->
+    <figure style="margin: 0;">
+      <div data-ui="" style="max-width: 460px; margin-left: auto; background: #DCE3EA; border: 6px solid #00002E;">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: #00002E; color: #FFFFFF;">
+          <span style="width: 40px; height: 40px; border-radius: 50%; background: #5A5E78; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 16px;">M4</span>
+          <span style="display: flex; flex-direction: column; line-height: 1.25;"><span style="font-weight: 600; font-size: 16px;">Mech Eng 400L (Official)</span><span style="font-size: 14px; color: #C8CADB;">243 participants</span></span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; padding: 18px; font-size: 16px; line-height: 1.4;">
+          <div style="align-self: flex-start; max-width: 85%; background: #FFFFFF; padding: 10px 12px;"><span style="display: block; font-size: 14px; font-weight: 600; color: #0F35DB;">Tobi</span>Abeg, anybody get connect for SIWES in PH? My HOD said make we find any place.</div>
+          <div style="align-self: flex-start; max-width: 85%; background: #FFFFFF; padding: 10px 12px;"><span style="display: block; font-size: 14px; color: #5A5E78;">Forwarded many times</span>URGENT!!! Oil company taking SIWES students. Pay ₦15,000 processing fee to the account below to secure your slot.</div>
+          <div style="align-self: flex-end; max-width: 80%; background: #D5FFFF; padding: 10px 12px;">Is this one even real?</div>
+          <div style="align-self: flex-start; max-width: 85%; background: #FFFFFF; padding: 10px 12px;"><span style="display: block; font-size: 14px; font-weight: 600; color: #0F35DB;">Amaka</span>I paid last year. Nobody picked my call after.</div>
+        </div>
+      </div>
+      <figcaption style="max-width: 460px; margin: 12px 0 0 auto; font-size: 16px; color: #3A3E5C;">A familiar group chat, recreated. Names are illustrative.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ SITE RULES: mandatory signs ============ -->
+<section style="background: #FFFFFF; padding: 144px 0;">
+  <div class="frame">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 32px; flex-wrap: wrap;">
+      <h2 class="cd caps h2 rise" style="margin: 0; font-weight: 700; font-size: 72px; line-height: .92;">Site rules. We enforce them.</h2>
+      <p style="margin: 0; max-width: 40ch;">Every placement site has its rules on the gate. These are ours, and they apply to students and companies alike.</p>
+    </div>
+    <div class="signs" style="margin-top: 72px; gap: 32px;">
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="sign rise" style="width: 168px; height: 168px; border-radius: 50%; background: #0F35DB; border: 6px solid #FFFFFF; outline: 3px solid #0F35DB; display: flex; align-items: center; justify-content: center;">
+          <svg width="92" height="92" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round"><rect x="5" y="11" width="38" height="26"/><circle cx="17" cy="22" r="4.5"/><path d="M10 33c1.4-4 4-5.5 7-5.5s5.6 1.5 7 5.5M28 20h10M28 26h10"/></svg>
+        </div>
+        <h3 class="cd caps" style="margin: 0; font-weight: 700; font-size: 32px; line-height: 1;">Students must be verified</h3>
+        <p style="margin: 0; font-size: 18px;">School email, your ID or portal screenshot, and a quick live photo. Applying unlocks once it’s approved.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="sign rise" style="width: 168px; height: 168px; border-radius: 50%; background: #0F35DB; border: 6px solid #FFFFFF; outline: 3px solid #0F35DB; display: flex; align-items: center; justify-content: center;">
+          <span class="cd" aria-hidden="true" style="color: #FFFFFF; font-weight: 700; font-size: 72px; line-height: 1;">₦0</span>
+        </div>
+        <h3 class="cd caps" style="margin: 0; font-weight: 700; font-size: 32px; line-height: 1;">No fees to be paid</h3>
+        <p style="margin: 0; font-size: 18px;">Fixth never charges you for a placement. Anyone asking for a “processing fee” is not us.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="sign rise" style="width: 168px; height: 168px; border-radius: 50%; background: #0F35DB; border: 6px solid #FFFFFF; outline: 3px solid #0F35DB; display: flex; align-items: center; justify-content: center;">
+          <svg width="92" height="92" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round"><path d="M6 42V18l12-7v31M18 42V8h16v34M34 42V22h8v20M3 42h42M23 16h6M23 23h6M23 30h6"/></svg>
+        </div>
+        <h3 class="cd caps" style="margin: 0; font-weight: 700; font-size: 32px; line-height: 1;">Verified companies only</h3>
+        <p style="margin: 0; font-size: 18px;">Each company submits its CAC registration and is approved by our team before any listing goes live.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="sign rise" style="width: 168px; height: 168px; border-radius: 50%; background: #0F35DB; border: 6px solid #FFFFFF; outline: 3px solid #0F35DB; display: flex; align-items: center; justify-content: center;">
+          <svg width="92" height="92" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round"><path d="M3 24s7.5-13 21-13 21 13 21 13-7.5 13-21 13S3 24 3 24z"/><circle cx="24" cy="24" r="6.5"/></svg>
+        </div>
+        <h3 class="cd caps" style="margin: 0; font-weight: 700; font-size: 32px; line-height: 1;">Every application gets a status</h3>
+        <p style="margin: 0; font-size: 18px;">You’re told the moment a recruiter opens yours, and at every step after. No more silence.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WORK PROGRESS ============ -->
+<section id="how" style="background: #00002E; color: #F3F3F3; padding: 144px 0;">
+  <div class="frame two" style="gap: 80px; align-items: center;">
+    <div>
+      <h2 class="cd caps h2 rise" style="margin: 0; font-weight: 700; font-size: 72px; line-height: .92; color: #FFFFFF;">Know where your application stands.</h2>
+      <ol style="list-style: none; margin: 48px 0 0; padding: 0; display: flex; flex-direction: column;">
+        <li style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; padding: 20px 0; border-top: 2px solid #2A2D5C;"><span class="cd caps" style="font-weight: 700; font-size: 32px; line-height: 1.1; color: #FFFFFF;">Get verified</span><span style="font-size: 18px;">Sign up with your school email. Upload your ID, take a live photo.</span></li>
+        <li style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; padding: 20px 0; border-top: 2px solid #2A2D5C;"><span class="cd caps" style="font-weight: 700; font-size: 32px; line-height: 1.1; color: #FFFFFF;">Set your dates</span><span style="font-size: 18px;">Discipline, level, the states you’d go to, and when your session frees you.</span></li>
+        <li style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; padding: 20px 0; border-top: 2px solid #2A2D5C;"><span class="cd caps" style="font-weight: 700; font-size: 32px; line-height: 1.1; color: #FFFFFF;">Apply once</span><span style="font-size: 18px;">Your profile and CV are the application. No cover letter.</span></li>
+        <li style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; padding: 20px 0; border-top: 2px solid #2A2D5C; border-bottom: 2px solid #2A2D5C;"><span class="cd caps" style="font-weight: 700; font-size: 32px; line-height: 1.1; color: #BCF7FB;">Track it</span><span style="font-size: 18px;">Submitted, viewed, shortlisted, accepted. You see every move.</span></li>
+      </ol>
+    </div>
+    <!-- the progress board -->
+    <div data-ui="" class="rise" style="background: #FFFFFF; color: #00002E; border: 6px solid #FFFFFF;">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 22px; background: #0F35DB; color: #FFFFFF;">
+        <span class="cd caps" style="font-weight: 600; font-size: 20px; letter-spacing: .06em;">Work progress</span>
+        <span style="font-size: 16px;">Sample application</span>
+      </div>
+      <div style="padding: 24px 22px 8px;">
+        <span style="display: block; font-size: 16px; color: #3A3E5C;">Ogun Steel Works · verified company</span>
+        <span class="cd" style="display: block; font-weight: 700; font-size: 32px; line-height: 1.1;">SIWES · Mechanical maintenance</span>
+        <div style="margin-top: 24px; display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 4px;">
+          <span style="height: 14px; background: #BCF7FB;"></span><span style="height: 14px; background: #BCF7FB;"></span><span style="height: 14px; background: #BCF7FB; outline: 3px solid #00002E; outline-offset: -3px;"></span><span style="height: 14px; background: #E6E8F0;"></span>
+        </div>
+        <div class="cd caps" style="margin-top: 10px; display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 4px; font-weight: 600; font-size: 18px; letter-spacing: .03em;">
+          <span>Submitted</span><span>Viewed</span><span>Shortlisted</span><span style="color: #5A5E78;">Accepted</span>
+        </div>
+      </div>
+      <ul style="list-style: none; margin: 16px 0 0; padding: 0 22px 20px; font-size: 16px;">
+        <li style="display: grid; grid-template-columns: 112px 1fr; gap: 12px; padding: 12px 0; border-top: 2px solid #E6E8F0;"><span style="color: #3A3E5C;">12/06 · 09:14</span><span>Submitted with your profile and CV</span></li>
+        <li style="display: grid; grid-template-columns: 112px 1fr; gap: 12px; padding: 12px 0; border-top: 2px solid #E6E8F0;"><span style="color: #3A3E5C;">12/06 · 15:40</span><span>Opened by the recruiter</span></li>
+        <li style="display: grid; grid-template-columns: 112px 1fr; gap: 12px; padding: 12px 0; border-top: 2px solid #E6E8F0;"><span style="color: #3A3E5C;">14/06 · 11:02</span><span><strong>Shortlisted.</strong> Interview at the site office, Sagamu</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PLACEMENT TYPES with photos ============ -->
+<section style="padding: 144px 0;">
+  <div class="frame">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 32px; flex-wrap: wrap;">
+      <h2 class="cd caps h2 rise" style="margin: 0; font-weight: 700; font-size: 72px; line-height: .92;">One profile. Every kind of site.</h2>
+      <p style="margin: 0; max-width: 40ch;">Whatever your programme asks for, apply from the same verified profile.</p>
+    </div>
+    <div class="types" style="margin-top: 64px; gap: 20px;">
+      <a href="#find" class="panel rise" style="position: relative; display: block; overflow: hidden; height: 600px; background: #00002E;">
+        <img src="/_blob/c62a033b552fa44a16656e7232b3baa0" alt="A smiling young engineer in a white kaftan, sunglasses and a white hard hat" width="1400" height="2100" style="width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; display: block;">
+        <span class="plate" style="position: absolute; left: 20px; right: 20px; bottom: 20px; background: #FFFFFF; border: 4px solid #00002E; padding: 18px 20px;">
+          <span class="cd caps" style="display: block; font-weight: 700; font-size: 32px; line-height: 1;">SIWES placements</span>
+          <span style="display: block; margin-top: 8px; font-size: 18px;">The attachment your degree requires, matched to your discipline and level.</span>
+          <span class="cd caps" style="display: block; margin-top: 10px; font-weight: 600; font-size: 20px; color: #0F35DB; letter-spacing: .04em;">Browse SIWES →</span>
+        </span>
+      </a>
+      <a href="#find" class="panel rise" style="position: relative; display: block; overflow: hidden; height: 600px; background: #00002E;">
+        <img src="/_blob/f588ac6bb2b1cc12e8c1f60b28366ce3" alt="A young woman engineer in navy overalls and an orange hard hat in front of tipper trucks" width="1400" height="933" style="width: 100%; height: 100%; object-fit: cover; object-position: 58% 40%; display: block;">
+        <span class="plate" style="position: absolute; left: 20px; right: 20px; bottom: 20px; background: #FFFFFF; border: 4px solid #00002E; padding: 18px 20px;">
+          <span class="cd caps" style="display: block; font-weight: 700; font-size: 32px; line-height: 1;">Industrial training</span>
+          <span style="display: block; margin-top: 8px; font-size: 18px;">Structured on-site programmes, with stipend and duration listed.</span>
+          <span class="cd caps" style="display: block; margin-top: 10px; font-weight: 600; font-size: 20px; color: #0F35DB; letter-spacing: .04em;">Browse IT →</span>
+        </span>
+      </a>
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <a href="#find" class="panel rise" style="position: relative; display: block; overflow: hidden; height: 420px; background: #00002E;">
+          <img src="/_blob/9e661ba4c7d9d2251cf2a1c2fe726f1c" alt="A young engineer in a yellow hard hat and glasses leaning beside an electrical box" width="1400" height="934" style="width: 100%; height: 100%; object-fit: cover; object-position: 30% 30%; display: block;">
+          <span class="plate" style="position: absolute; left: 20px; right: 20px; bottom: 20px; background: #FFFFFF; border: 4px solid #00002E; padding: 18px 20px;">
+            <span class="cd caps" style="display: block; font-weight: 700; font-size: 32px; line-height: 1;">Internships</span>
+            <span style="display: block; margin-top: 8px; font-size: 18px;">Paid and unpaid, with the stipend shown before you apply.</span>
+          </span>
+        </a>
+        <div style="flex: 1; background: #D5FFFF; border: 4px dashed #0F35DB; padding: 20px; display: flex; flex-direction: column; justify-content: center;">
+          <span class="cd caps" style="font-weight: 700; font-size: 32px; line-height: 1;">Graduate roles</span>
+          <span style="margin-top: 6px; font-size: 18px;">For fresh graduates and corpers. Coming after launch.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COMPANIES ============ -->
+<section id="companies" style="background: #0F35DB; color: #FFFFFF; padding: 144px 0;">
+  <div class="frame two" style="gap: 80px; align-items: center;">
+    <div>
+      <h2 class="cd caps h2 rise" style="margin: 0; font-weight: 700; font-size: 72px; line-height: .92;">Hiring? Put up your board.</h2>
+      <p style="margin: 32px 0 0; max-width: 46ch;">Get CAC-verified once, then post SIWES, IT and internship placements that only eligible students can apply to. Every applicant is a verified student, sorted by discipline, level and location.</p>
+      <ul style="list-style: none; margin: 32px 0 0; padding: 0; display: flex; flex-direction: column; gap: 14px;">
+        <li style="display: flex; gap: 14px;"><span aria-hidden="true" style="flex-shrink: 0; margin-top: 9px; width: 12px; height: 12px; background: #BCF7FB;"></span>Limit each role by discipline and academic level</li>
+        <li style="display: flex; gap: 14px;"><span aria-hidden="true" style="flex-shrink: 0; margin-top: 9px; width: 12px; height: 12px; background: #BCF7FB;"></span>Update a status in one click, and the student is told at once</li>
+        <li style="display: flex; gap: 14px;"><span aria-hidden="true" style="flex-shrink: 0; margin-top: 9px; width: 12px; height: 12px; background: #BCF7FB;"></span>AI shortlisting with clear reasons is coming. You make every final call</li>
+      </ul>
+      <div style="margin-top: 40px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+        <a href="#signup-company" class="btn cd caps" style="display: inline-flex; align-items: center; min-height: 56px; padding: 0 28px; background: #FFFFFF; color: #0F35DB; font-weight: 700; font-size: 20px; letter-spacing: .04em;">Post a placement</a>
+        <span style="font-size: 18px;">Free for companies during launch.</span>
+      </div>
+    </div>
+    <div style="position: relative; min-height: 620px;">
+      <img src="/_blob/4d0f3109a46b6d4a8ea0f2db82be4764" alt="A site supervisor in a blue cap and blue overalls with reflective strips, arms crossed" width="1400" height="1960" style="position: absolute; right: 0; top: 0; width: 72%; height: 100%; object-fit: cover; object-position: 50% 30%; display: block;">
+      <div data-ui="" style="position: absolute; left: 0; bottom: 40px; width: 74%; background: #FFFFFF; color: #00002E; border: 4px solid #00002E; box-shadow: 0 20px 36px -18px rgba(0,0,0,.35);">
+        <div style="display: flex; justify-content: space-between; gap: 12px; padding: 12px 18px; background: #00002E; color: #FFFFFF; font-size: 16px;"><span class="cd caps" style="font-weight: 600; font-size: 18px; letter-spacing: .06em;">Applicants · SIWES Mechanical</span><span>Sample</span></div>
+        <div style="display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 12px 18px; border-bottom: 2px solid #E6E8F0;"><span style="font-weight: 600;">Chiamaka Okafor</span><span style="font-size: 14px; font-weight: 600; padding: 2px 10px; background: #BCF7FB;">Shortlisted</span><span style="font-size: 16px; color: #3A3E5C;">UNILAG · Mechanical · 400L · verified</span><span></span></div>
+        <div style="display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 12px 18px; border-bottom: 2px solid #E6E8F0;"><span style="font-weight: 600;">Tunde Adeyemi</span><span style="font-size: 14px; font-weight: 600; padding: 2px 10px; background: #E6E8F0;">Viewed</span><span style="font-size: 16px; color: #3A3E5C;">FUTA · Mechanical · 400L · verified</span><span></span></div>
+        <div style="display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 12px 18px;"><span style="font-weight: 600;">Aisha Bello</span><span style="font-size: 14px; font-weight: 600; padding: 2px 10px; border: 2px solid #00002E;">New</span><span style="font-size: 16px; color: #3A3E5C;">ABU Zaria · Mechanical · 400L · verified</span><span></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section id="faq" class="faq" style="padding: 144px 0;">
+  <div class="frame two" style="gap: 80px; align-items: start;">
+    <div>
+      <h2 class="cd caps h2 rise" style="margin: 0; font-weight: 700; font-size: 72px; line-height: .92;">Questions we get</h2>
+      <p style="margin: 28px 0 0; max-width: 36ch;">Still unsure? Send us a message on WhatsApp at <strong>[+234 XXX XXX XXXX]</strong>.</p>
+    </div>
+    <div>
+      <details name="faq" open="{{yes}}"><summary style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 22px 0; font-weight: 600; font-size: 20px;">Do I need to know somebody to get placed?<span class="pm" aria-hidden="true" style="font-size: 32px; color: #0F35DB; line-height: 1;">+</span></summary><p style="margin: 0 0 24px; max-width: 56ch;">No. Verified companies see your verified profile, your skills and your CV. That’s the whole point.</p></details>
+      <details name="faq"><summary style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 22px 0; font-weight: 600; font-size: 20px;">Will Fixth ever ask me to pay?<span class="pm" aria-hidden="true" style="font-size: 32px; color: #0F35DB; line-height: 1;">+</span></summary><p style="margin: 0 0 24px; max-width: 56ch;">Never for a placement. If anyone asks you for a fee in Fixth’s name, don’t pay, and report it to us.</p></details>
+      <details name="faq"><summary style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 22px 0; font-weight: 600; font-size: 20px;">I don’t have a school email. Can I still join?<span class="pm" aria-hidden="true" style="font-size: 32px; color: #0F35DB; line-height: 1;">+</span></summary><p style="margin: 0 0 24px; max-width: 56ch;">Yes. Use a personal email and submit your student ID and matric number. We verify it manually.</p></details>
+      <details name="faq"><summary style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 22px 0; font-weight: 600; font-size: 20px;">How do you check the companies?<span class="pm" aria-hidden="true" style="font-size: 32px; color: #0F35DB; line-height: 1;">+</span></summary><p style="margin: 0 0 24px; max-width: 56ch;">Each one submits its CAC registration and is reviewed by our team. Nothing they post is visible until they’re approved.</p></details>
+      <details name="faq"><summary style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 22px 0; font-weight: 600; font-size: 20px;">Our session has been shifted. What about my dates?<span class="pm" aria-hidden="true" style="font-size: 32px; color: #0F35DB; line-height: 1;">+</span></summary><p style="margin: 0 0 24px; max-width: 56ch;">Update your availability any time. You’ll only be matched with placements that fit your new dates.</p></details>
+      <details name="faq"><summary style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 22px 0; font-weight: 600; font-size: 20px;">Do I need a cover letter?<span class="pm" aria-hidden="true" style="font-size: 32px; color: #0F35DB; line-height: 1;">+</span></summary><p style="margin: 0 0 24px; max-width: 56ch;">No. Your profile and CV go in one step.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GATE PASS CTA ============ -->
+<section id="signup" style="position: relative; overflow: hidden; background: #00002E;">
+  <img src="/_blob/63be3fbd9e399ba71047e8927cb4000c" alt="The Lekki–Ikoyi cable-stayed bridge in Lagos over the lagoon, with buildings under construction behind" width="1400" height="1491" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 70% 72%;">
+  <div style="position: absolute; inset: 0; background: rgba(0,0,46,.55);"></div>
+  <div class="frame two" style="position: relative; gap: 64px; align-items: center; padding-top: 144px; padding-bottom: 144px;">
+    <div style="color: #FFFFFF;">
+      <h2 class="cd caps h2 rise" style="margin: 0; font-weight: 700; font-size: 80px; line-height: .9;">Your gate pass is one sign-up away.</h2>
+      <div style="margin-top: 40px; display: flex; gap: 12px; flex-wrap: wrap;">
+        <a href="#signup" class="btn cd caps" style="display: inline-flex; align-items: center; min-height: 60px; padding: 0 30px; background: #BCF7FB; color: #00002E; font-weight: 700; font-size: 24px; letter-spacing: .04em;">Create my profile</a>
+        <a href="#signup-company" class="btn cd caps" style="display: inline-flex; align-items: center; min-height: 60px; padding: 0 30px; background: #FFFFFF; color: #0F35DB; font-weight: 700; font-size: 24px; letter-spacing: .04em;">I’m hiring</a>
+      </div>
+    </div>
+    <!-- the pass -->
+    <div data-ui="" style="justify-self: end; width: 380px; max-width: 100%; background: #FFFFFF; color: #00002E; transform: rotate(3deg); box-shadow: 0 30px 50px -20px rgba(0,0,0,.6);">
+      <div style="display: flex; justify-content: center; padding-top: 14px; background: #0F35DB;"><span style="width: 64px; height: 12px; border-radius: 6px; background: #00002E;"></span></div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px 18px; background: #0F35DB; color: #FFFFFF;"><span class="cd caps" style="font-weight: 700; font-size: 24px;">Site pass</span><span style="font-size: 14px;">Fixth</span></div>
+      <dl style="margin: 0; padding: 8px 20px 20px; font-size: 16px;">
+        <div style="padding: 10px 0; border-bottom: 2px solid #E6E8F0;"><dt class="cd caps" style="font-size: 16px; font-weight: 600; color: #0F35DB; letter-spacing: .06em;">Name</dt><dd style="margin: 0; font-weight: 600; font-size: 20px;">Your name here</dd></div>
+        <div style="padding: 10px 0; border-bottom: 2px solid #E6E8F0;"><dt class="cd caps" style="font-size: 16px; font-weight: 600; color: #0F35DB; letter-spacing: .06em;">Discipline · Level</dt><dd style="margin: 0;">Electrical · 400L</dd></div>
+        <div style="padding: 10px 0;"><dt class="cd caps" style="font-size: 16px; font-weight: 600; color: #0F35DB; letter-spacing: .06em;">Status</dt><dd style="margin: 4px 0 0;"><span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: #BCF7FB; font-weight: 600;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00002E" stroke-width="3" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>Verified student</span></dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer style="background: #00002E; color: #F3F3F3; padding: 96px 0 32px;">
+  <div class="frame">
+    <span role="img" aria-label="fixth" style="display: block; color: #0F35DB;"><svg viewBox="0 0 68 29" style="display: block; width: 100%; height: auto;" aria-hidden="true"><path fill="currentColor" d="M7.979 5.802l3.116 0 0 5.8-2.767 0.013c-1.528 0-2.767 1.295-2.767 2.893 0 1.598 1.24 2.893 2.767 2.893l2.767 0.013 0 5.8-3.116 0c-0.82642 0.00138-1.64753-0.13204-2.431-0.395l0 6.181-5.548 0 0-15.364 0.015 0c0.25-4.371 3.72-7.836 7.962-7.836l0.002 0.002z m36.079 0.38c0.78321-0.26252 1.60397-0.3956 2.43-0.394l3.117 0 0 5.8-2.767 0.013c-1.528 0-2.767 1.295-2.767 2.893 0 1.598 1.24 2.893 2.767 2.893l2.767 0.012 0 5.8-3.115 0-0.002 0.002c-4.242 0-7.712-3.464-7.962-7.835l-0.015 0 0-15.364 5.548 0-0.001 6.18z m-28.442 1.83c1.528 0 2.767 1.295 2.767 2.893l0 12.295-5.54601 0 0-12.295 0.01201 0c0-1.598 1.239-2.893 2.76699-2.893m21.154 3.587l-2.79 0.006-0.025 0.027c-1.515 0.014-2.739 1.297-2.742 2.877l0 0.007c0 1.593 1.24 2.883 2.767 2.883q0.127 0 0.25-0.012l2.53 0.012 0 5.8-3.141 0-0.038-0.012c-1.973-0.105-3.765-0.927-5.142-2.22-1.39721 1.32589-3.2198 2.11262-5.14299 2.22l-0.037 0.013-3.132-0.021 0-5.798 2.52 0.007c0.08311 0.00781 0.16652 0.01215 0.25 0.013 1.528 0 2.767-1.29 2.767-2.884l0-0.006c-0.003-1.582-1.227-2.863-2.741-2.877l-0.026-0.027-2.78 0.012 0-5.798 2.83 0 0.005 0.001 0.001-0.001c2.11 0.023 4.03 0.864 5.487 2.23 1.458-1.366 3.379-2.207 5.488-2.23l0.003-0.002 2.84-0.02-0.00101 5.8z m20.124-5.405c0.77583-0.25929 1.58801-0.39331 2.40601-0.397l0.74 0c4.398 0.013 7.96 3.74 7.96 8.336l0 9.067-5.55 0 0-8.702-0.013 0c0-1.594-1.235-2.888-2.762-2.891-1.527 0.003-2.762 1.297-2.76201 2.892l-0.01299 0 0 8.7-5.55 0 0-23.196 5.544 0-0.00001 6.191z m-41.277-6.192c1.528 0 2.767 1.295 2.767 2.893 0 1.598-1.239 2.893-2.767 2.893-1.528 0-2.767-1.296-2.767-2.893 0-1.598 1.24-2.893 2.767-2.893m35.733 0l-0.001 0 0.00101-0.002-0.00001 0.002z"/></svg></span>
+    <div class="foot" style="margin-top: 64px; gap: 32px; font-size: 16px;">
+      <nav aria-label="Students" style="display: flex; flex-direction: column; gap: 10px;"><span class="cd caps" style="font-weight: 700; font-size: 20px; color: #FFFFFF;">Students</span><a href="#signup">Create a profile</a><a href="#top">Find placements</a><a href="#how">How it works</a></nav>
+      <nav aria-label="Companies" style="display: flex; flex-direction: column; gap: 10px;"><span class="cd caps" style="font-weight: 700; font-size: 20px; color: #FFFFFF;">Companies</span><a href="#companies">Post a placement</a><a href="#companies">Company verification</a><a href="#companies">Pricing</a></nav>
+      <nav aria-label="Fixth" style="display: flex; flex-direction: column; gap: 10px;"><span class="cd caps" style="font-weight: 700; font-size: 20px; color: #FFFFFF;">Fixth</span><a href="#">About</a><a href="#">Trust and safety</a><a href="#faq">Questions</a></nav>
+      <nav aria-label="Legal" style="display: flex; flex-direction: column; gap: 10px;"><span class="cd caps" style="font-weight: 700; font-size: 20px; color: #FFFFFF;">Legal</span><a href="#">Terms of use</a><a href="#">Privacy policy</a><a href="#">Cookie policy</a></nav>
+    </div>
+    <div style="margin-top: 56px; padding-top: 24px; border-top: 2px solid #2A2D5C; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 16px; color: #C8CADB;">
+      <span>© 2026 Fixth. Made for engineering students in Nigeria.</span>
+      <span>Photos: Unsplash (stock, for this design).</span>
+    </div>
+  </div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":7600}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { yes: true };
+  }
+}
+</script>
+</body>
+</html>

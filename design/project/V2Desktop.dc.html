@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fixth landing page v2</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Stack+Sans+Headline:wght@300&amp;family=Stack+Sans+Text:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#00002E}
+*{box-sizing:border-box}
+a{color:inherit;text-decoration:none}a:hover{color:inherit}
+.v2{font-family:'Stack Sans Text',system-ui,sans-serif;color:#00002E;font-size:18px;line-height:1.5;overflow-x:hidden}
+.hd{font-family:'Stack Sans Headline','Stack Sans Text',sans-serif;font-weight:300;letter-spacing:-0.022em;line-height:1.05}
+.frame{width:100%;max-width:1312px;margin:0 auto;padding:0 32px}
+.btn{transition:transform .16s ease,filter .16s ease;cursor:pointer}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.12)}
+.btn:active{transform:translateY(0)}
+.chip{transition:background-color .16s ease,color .16s ease;cursor:pointer}
+.chip:hover{filter:brightness(.96)}
+.row{transition:background-color .16s ease}
+.row:hover{background:#EEF1FF !important}
+.folder-tab{transition:transform .2s ease}
+.folder-tab:hover{transform:translateY(-6px)}
+.tabbtn{background:none;border:0;padding:6px 0;font:inherit;cursor:pointer}
+.tabbtn:hover{color:#FFFFFF !important}
+.faq details{background:#FFFFFF;border-radius:28px 0 0 0;transition:background-color .2s ease,color .2s ease}
+.faq details[open]{background:#0F35DB;color:#FFFFFF}
+.faq details[open] .faq-a{color:#FFFFFF}
+.faq summary{list-style:none;cursor:pointer}
+.faq summary::-webkit-details-marker{display:none}
+.faq .bar-v{transform:rotate(90deg);transition:transform .2s ease}
+.faq details[open] .bar-v{transform:rotate(0deg)}
+.cta{display:block;background:#0F35DB;color:#FFFFFF;transition:background-color .12s,color .12s}
+.cta:hover,.cta:focus-visible{background:#BCF7FB;color:#00002E}
+.v2 :focus-visible{outline:3px solid #BCF7FB;outline-offset:3px}
+@keyframes rise{from{opacity:0;transform:translate3d(0,28px,0)}to{opacity:1;transform:none}}
+@keyframes drift{from{transform:scale(1)}to{transform:scale(1.06)}}
+.enter{animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
+.enter2{animation-delay:.08s}.enter3{animation-delay:.16s}
+@supports (animation-timeline: view()){.rise{animation:rise linear both;animation-timeline:view();animation-range:entry 0% cover 22%}}
+@media (prefers-reduced-motion: reduce){.enter,.rise{animation:none !important}img{animation:none !important}}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.folders{width:86%;max-width:1240px;margin:0 auto}
+.fold{position:relative;height:64px}
+.tab{position:absolute;top:-40px;height:40px;padding:0 22px;display:flex;align-items:center;font-size:18px;border-radius:20px 0 0 0;white-space:nowrap}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.span2{grid-column:span 2}
+.faqgrid{display:grid;grid-template-columns:4fr 8fr;gap:48px}
+.links{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) minmax(0,1.6fr);gap:32px}
+.bar{display:flex;gap:6px}
+.bar>div{display:flex;flex-direction:column;gap:20px;min-width:0}
+.listing{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:18px;align-items:center}
+.pick{display:flex;flex-wrap:wrap;gap:8px}
+@media (max-width:860px){
+  .v2{font-size:17px}
+  .frame{padding:0 20px}
+  .fold{height:52px}
+  .tab{top:-32px;height:32px;font-size:15px;padding:0 14px;border-radius:16px 0 0 0}
+  .h1{font-size:15vw !important}
+  .heroline{font-size:18px !important}
+  .folders{width:calc(100% - 32px)}
+  .tname{font-size:20px !important}
+  .cta{border-radius:72px 0 0 0 !important}
+  .cta-line{left:24px !important;top:88px !important;max-width:80% !important}
+  .cta-arrow{right:20px !important;top:28px !important;width:32px;height:32px}
+  .head{max-width:none !important}
+  .split,.faqgrid{grid-template-columns:minmax(0,1fr)}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  .links{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .bar{flex-direction:column}
+  .bar>div{flex:none !important}
+  .seg{height:auto !important;min-height:96px}
+  .sec{padding-top:96px !important;padding-bottom:96px !important}
+  .statement{font-size:24px !important;text-align:left !important;width:100% !important}
+  .head{font-size:40px !important}
+  .cta-word{font-size:30vw !important}
+  .cta{height:380px !important}
+  .hide-sm{display:none !important}
+  .listing{grid-template-columns:44px minmax(0,1fr)}
+  .listing .apply{grid-column:1 / -1}
+  .sticky{position:static !important}
+  .plate{padding:0 !important}
+  .actions{flex-direction:column}
+  .actions a{width:100% !important}
+  .folder-top{flex-direction:column;align-items:stretch !important}
+  .folder-top a{text-align:center;justify-content:center}
+}
+</style>
+</helmet>
+
+<div class="v2" style="background: #F3F3F3;">
+
+<!-- ================= HERO: navy ground + folder stack ================= -->
+<header id="top" style="background: #00002E; color: #F3F3F3; padding-top: 24px;">
+  <div class="frame" style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; font-size: 15px;">
+    <nav aria-label="Main" style="display: flex; gap: 24px;">
+      <a href="#students" class="hide-sm" style="color: #F3F3F3;">Students</a>
+      <a href="#companies" class="hide-sm" style="color: #F3F3F3;">Companies</a>
+      <a href="#faq" class="hide-sm" style="color: #F3F3F3;">Questions</a>
+    </nav>
+    <a href="#top" aria-label="fixth home" style="display: inline-flex; color: #FFFFFF;"><svg viewBox="0 0 68 29" width="72" height="31" aria-hidden="true"><path fill="currentColor" d="M7.979 5.802l3.116 0 0 5.8-2.767 0.013c-1.528 0-2.767 1.295-2.767 2.893 0 1.598 1.24 2.893 2.767 2.893l2.767 0.013 0 5.8-3.116 0c-0.82642 0.00138-1.64753-0.13204-2.431-0.395l0 6.181-5.548 0 0-15.364 0.015 0c0.25-4.371 3.72-7.836 7.962-7.836l0.002 0.002z m36.079 0.38c0.78321-0.26252 1.60397-0.3956 2.43-0.394l3.117 0 0 5.8-2.767 0.013c-1.528 0-2.767 1.295-2.767 2.893 0 1.598 1.24 2.893 2.767 2.893l2.767 0.012 0 5.8-3.115 0-0.002 0.002c-4.242 0-7.712-3.464-7.962-7.835l-0.015 0 0-15.364 5.548 0-0.001 6.18z m-28.442 1.83c1.528 0 2.767 1.295 2.767 2.893l0 12.295-5.54601 0 0-12.295 0.01201 0c0-1.598 1.239-2.893 2.76699-2.893m21.154 3.587l-2.79 0.006-0.025 0.027c-1.515 0.014-2.739 1.297-2.742 2.877l0 0.007c0 1.593 1.24 2.883 2.767 2.883q0.127 0 0.25-0.012l2.53 0.012 0 5.8-3.141 0-0.038-0.012c-1.973-0.105-3.765-0.927-5.142-2.22-1.39721 1.32589-3.2198 2.11262-5.14299 2.22l-0.037 0.013-3.132-0.021 0-5.798 2.52 0.007c0.08311 0.00781 0.16652 0.01215 0.25 0.013 1.528 0 2.767-1.29 2.767-2.884l0-0.006c-0.003-1.582-1.227-2.863-2.741-2.877l-0.026-0.027-2.78 0.012 0-5.798 2.83 0 0.005 0.001 0.001-0.001c2.11 0.023 4.03 0.864 5.487 2.23 1.458-1.366 3.379-2.207 5.488-2.23l0.003-0.002 2.84-0.02-0.00101 5.8z m20.124-5.405c0.77583-0.25929 1.58801-0.39331 2.40601-0.397l0.74 0c4.398 0.013 7.96 3.74 7.96 8.336l0 9.067-5.55 0 0-8.702-0.013 0c0-1.594-1.235-2.888-2.762-2.891-1.527 0.003-2.762 1.297-2.76201 2.892l-0.01299 0 0 8.7-5.55 0 0-23.196 5.544 0-0.00001 6.191z m-41.277-6.192c1.528 0 2.767 1.295 2.767 2.893 0 1.598-1.239 2.893-2.767 2.893-1.528 0-2.767-1.296-2.767-2.893 0-1.598 1.24-2.893 2.767-2.893m35.733 0l-0.001 0 0.00101-0.002-0.00001 0.002z"/></svg></a>
+    <div style="display: flex; justify-content: flex-end; gap: 20px; align-items: center;">
+      <a href="#login" class="hide-sm" style="color: #F3F3F3; white-space: nowrap;">Log in</a>
+      <a href="#signup" class="btn" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; background: #BCF7FB; color: #00002E; font-weight: 500; border-radius: 18px 0 0 0;">Sign up</a>
+    </div>
+  </div>
+
+  <div class="frame" style="text-align: center; padding-top: 104px;">
+    <h1 class="hd h1 enter" style="margin: 0; font-size: clamp(96px, 11vw, 168px); color: #FFFFFF;">Get placed.</h1>
+    <p class="heroline enter enter2" style="margin: 36px auto 0; max-width: 46ch; font-size: 22px; line-height: 1.5; color: #F3F3F3;">Verified SIWES, industrial training and internship placements for engineering students in Nigeria. Apply once, then watch every application move.</p>
+  </div>
+
+  <!-- folder stack -->
+  <div class="folders" style="margin-top: 112px;">
+    <div class="fold enter enter3" style="background: #0F35DB;">
+      <a href="#companies" class="tab folder-tab" style="right: 0; background: #0F35DB; color: #FFFFFF;">For companies</a>
+    </div>
+    <div class="fold" style="background: #D5FFFF;">
+      <a href="#types" class="tab folder-tab" style="left: 56%; background: #D5FFFF; color: #00002E;">Internships</a>
+    </div>
+    <div class="fold" style="background: #BCF7FB;">
+      <a href="#types" class="tab folder-tab" style="left: 30%; background: #BCF7FB; color: #00002E;">Industrial training</a>
+    </div>
+    <div class="fold" style="background: #FFFFFF;">
+      <a href="#types" class="tab folder-tab" style="left: 9%; background: #FFFFFF; color: #00002E;">SIWES</a>
+    </div>
+    <!-- front, open folder -->
+    <div id="find" data-ui="" style="position: relative; background: #F3F3F3; color: #00002E; padding: 32px 32px 40px;">
+      <span class="tab" style="left: 0; background: #F3F3F3; color: #00002E;">Find a placement</span>
+      <div class="folder-top" style="display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+        <a href="#signup" class="btn" style="display: inline-flex; align-items: center; gap: 10px; min-height: 56px; padding: 0 26px; background: #0F35DB; color: #FFFFFF; font-weight: 500; border-radius: 24px 0 0 0;">Search all placements
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a href="#companies" style="font-size: 16px; color: #00002E; text-decoration: underline; text-underline-offset: 4px;">Hiring students? Post a placement free</a>
+      </div>
+      <p style="margin: 32px 0 12px; font-size: 16px; font-weight: 500;">Pick your discipline</p>
+      <div class="pick" role="group" aria-label="Discipline">
+        <sc-for list="{{discs}}" as="d" hint-placeholder-count="6">
+          <button type="button" class="chip" onClick="{{d.pick}}" aria-pressed="{{d.pressed}}" style="min-height: 44px; padding: 0 18px; border: 0; border-radius: 18px 0 0 0; font: inherit; font-size: 16px; background: {{d.bg}}; color: {{d.fg}};">{{d.name}}</button>
+        </sc-for>
+      </div>
+      <div style="margin-top: 24px; background: #FFFFFF; border-radius: 28px 0 0 0;">
+        <sc-for list="{{listings}}" as="l" hint-placeholder-count="3">
+          <div class="listing row" style="padding: 20px 24px; background: #FFFFFF; border-radius: {{l.radius}};">
+            <span style="width: 52px; height: 52px; display: inline-flex; align-items: center; justify-content: center; border-radius: 20px 0 0 0; font-weight: 500; font-size: 16px; background: {{l.markBg}}; color: {{l.markFg}};">{{l.mark}}</span>
+            <span style="display: flex; flex-direction: column; gap: 4px; min-width: 0;">
+              <span style="font-size: 18px; font-weight: 500;">{{l.role}}</span>
+              <span style="font-size: 15px; color: #3D4060;">{{l.company}} · verified company · {{l.where}} · {{l.length}} · {{l.level}}</span>
+            </span>
+            <a href="#signup" class="btn apply" style="display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 18px; background: #00002E; color: #FFFFFF; font-size: 15px; font-weight: 500; border-radius: 16px 0 0 0;">Apply</a>
+          </div>
+        </sc-for>
+      </div>
+      <p style="margin: 16px 0 0; font-size: 15px; color: #3D4060;">Sample listings for this design. Live listings come only from CAC-verified companies.</p>
+    </div>
+  </div>
+</header>
+
+<!-- ================= INTRO: statement with inline pictures ================= -->
+<section id="students" class="sec" style="background: #F3F3F3; padding: 200px 0 180px;">
+  <div class="frame">
+    <h2 class="vh">Why Fixth</h2>
+    <p class="statement rise" style="margin: 0 auto; width: 72%; max-width: 40ch; text-align: center; font-size: 36px; line-height: 1.24; font-weight: 500; letter-spacing: -0.015em;">Every engineer in the hangar <img src="/_blob/36db8debf955ae1446c8234252e2a209" alt="Aircraft engineers servicing a propeller plane in a hangar in Kwara State" width="62" height="31" style="display: inline-block; height: 0.85em; width: 1.6em; object-fit: cover; vertical-align: -0.1em; border-radius: 0.42em 0 0 0; margin: 0 0.1em;">, the power station <img src="/_blob/7eff6bb75d2814713368f5f6588ba05d" alt="Two engineers in hard hats at Egbin power station, Lagos" width="62" height="31" style="display: inline-block; height: 0.85em; width: 1.6em; object-fit: cover; object-position: 50% 30%; vertical-align: -0.1em; border-radius: 0.42em 0 0 0; margin: 0 0.1em;"> and the dam <img src="/_blob/4db024b6147984492787b92e0dbd9e60" alt="Kainji Dam spillway on the River Niger" width="62" height="31" style="display: inline-block; height: 0.85em; width: 1.6em; object-fit: cover; vertical-align: -0.1em; border-radius: 0.42em 0 0 0; margin: 0 0.1em;"> started with one placement. Yours should come on merit.</p>
+  </div>
+</section>
+
+<!-- ================= HOW IT WORKS: the status bar, enlarged ================= -->
+<section id="how" class="sec" style="background: #FFFFFF; padding: 160px 0;">
+  <div class="frame">
+    <h2 class="hd head rise" style="margin: 0 0 64px; font-size: 64px; max-width: 14ch;">Know where you stand.</h2>
+    <div class="bar" data-ui="">
+      <div style="flex: 14 1 0;">
+        <div class="seg rise" style="height: 200px; background: #D5FFFF; padding: 20px; border-radius: 40px 0 0 0;"><span style="font-size: 26px;">Submitted</span></div>
+        <p style="margin: 0; font-size: 18px; max-width: 22ch;">First, one tap sends your verified profile and CV. No cover letter.</p>
+      </div>
+      <div style="flex: 22 1 0;">
+        <div class="seg rise" style="height: 200px; background: #BCF7FB; padding: 20px;"><span style="font-size: 26px;">Viewed</span></div>
+        <p style="margin: 0; font-size: 18px; max-width: 22ch;">Then you see the moment a recruiter opens it.</p>
+      </div>
+      <div style="flex: 28 1 0;">
+        <div class="seg rise" style="height: 200px; background: #0F35DB; color: #FFFFFF; padding: 20px;"><span style="font-size: 26px;">Shortlisted</span></div>
+        <p style="margin: 0; font-size: 18px; max-width: 22ch;">Next, a shortlist notice, so you can prepare.</p>
+      </div>
+      <div style="flex: 36 1 0;">
+        <div class="seg rise" style="height: 200px; background: #00002E; color: #BCF7FB; padding: 20px;"><span style="font-size: 26px;">Accepted</span></div>
+        <p style="margin: 0; font-size: 18px; max-width: 22ch;">Finally, the offer, with every step on record.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SHOWCASE: square plate, three placement types ================= -->
+<section id="types" class="sec" style="background: #00002E; color: #F3F3F3; padding: 160px 0;">
+  <div class="frame split" style="gap: 80px; align-items: stretch;">
+    <div class="plate" style="padding: 0 0 0 0;">
+      <img src="{{show.photo}}" alt="{{show.alt}}" width="600" height="600" style="display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; animation: drift 18s ease-in-out infinite alternate; object-position: {{show.pos}}; border-radius: 220px 0 0 0;">
+      <p style="margin: 14px 0 0; font-size: 15px; color: #C9CBE0;">{{show.caption}}</p>
+    </div>
+    <div style="display: flex; flex-direction: column; justify-content: space-between; gap: 48px;">
+      <h2 class="hd head rise" style="margin: 0 0 -24px; font-size: 64px; color: #FFFFFF;">Three ways in.</h2>
+      <div role="tablist" aria-label="Placement type" style="display: flex; gap: 28px; flex-wrap: wrap; font-size: 18px;">
+        <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+          <button type="button" role="tab" class="tabbtn" aria-selected="{{t.sel}}" onClick="{{t.pick}}" style="color: {{t.fg}}; border-bottom: 3px solid {{t.line}};">{{t.name}}</button>
+        </sc-for>
+      </div>
+      <div>
+        <h3 style="margin: 0; font-size: 36px; font-weight: 500; letter-spacing: -0.015em; color: #FFFFFF;">{{show.title}}</h3>
+        <p style="margin: 24px 0 0; max-width: 40ch; font-size: 18px; line-height: 1.55; color: #F3F3F3;">{{show.desc}}</p>
+      </div>
+      <div class="actions" style="display: flex; gap: 8px;">
+        <a href="#find" class="btn" style="width: 50%; min-height: 72px; display: flex; align-items: center; padding: 0 24px; background: #BCF7FB; color: #00002E; font-weight: 500; border-radius: 28px 0 0 0;">{{show.primary}}</a>
+        <a href="#signup" class="btn" style="width: 50%; min-height: 72px; display: flex; align-items: center; padding: 0 24px; background: #0D0D4D; color: #FFFFFF; font-weight: 500;">Set my dates and discipline</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PROOF: verification tiles ================= -->
+<section id="trust" class="sec" style="background: #F3F3F3; padding: 160px 0;">
+  <div class="frame">
+    <div class="tiles">
+      <div class="span2" style="background: #0F35DB; color: #FFFFFF; border-radius: 48px 0 0 0; padding: 28px; display: flex; flex-direction: column; justify-content: space-between; gap: 24px; min-height: 220px;">
+        <h2 class="hd head rise" style="margin: 0; font-size: 64px;">Checked on both sides.</h2>
+        <p style="margin: 0; font-size: 18px; max-width: 44ch;">No listing goes live before its company is approved. No application arrives without a verified student behind it.</p>
+      </div>
+      <div class="rise" style="background: #FFFFFF; border-radius: 28px 0 0 0; padding: 24px; aspect-ratio: 3 / 2; display: flex; flex-direction: column; justify-content: space-between;"><span class="tname" style="font-size: 26px; font-weight: 500; line-height: 1.15;">School email</span><span style="font-size: 15px; color: #3D4060;">Students · or personal email plus matric number</span></div>
+      <div class="rise" style="background: #FFFFFF; border-radius: 28px 0 0 0; padding: 24px; aspect-ratio: 3 / 2; display: flex; flex-direction: column; justify-content: space-between;"><span class="tname" style="font-size: 26px; font-weight: 500; line-height: 1.15;">Student ID or portal</span><span style="font-size: 15px; color: #3D4060;">Students · proof of active enrolment</span></div>
+      <div class="rise" style="background: #FFFFFF; border-radius: 28px 0 0 0; padding: 24px; aspect-ratio: 3 / 2; display: flex; flex-direction: column; justify-content: space-between;"><span class="tname" style="font-size: 26px; font-weight: 500; line-height: 1.15;">Live photo match</span><span style="font-size: 15px; color: #3D4060;">Students · a quick liveness check</span></div>
+      <div class="rise" style="background: #00002E; color: #FFFFFF; border-radius: 28px 0 0 0; padding: 24px; aspect-ratio: 3 / 2; display: flex; flex-direction: column; justify-content: space-between;"><span class="tname" style="font-size: 26px; font-weight: 500; line-height: 1.15;">CAC registration</span><span style="font-size: 15px; color: #C9CBE0;">Companies · submitted at sign-up</span></div>
+      <div class="rise" style="background: #00002E; color: #FFFFFF; border-radius: 28px 0 0 0; padding: 24px; aspect-ratio: 3 / 2; display: flex; flex-direction: column; justify-content: space-between;"><span class="tname" style="font-size: 26px; font-weight: 500; line-height: 1.15;">Team review</span><span style="font-size: 15px; color: #C9CBE0;">Companies · approved by a person</span></div>
+      <div class="rise" style="background: #00002E; color: #FFFFFF; border-radius: 28px 0 0 0; padding: 24px; aspect-ratio: 3 / 2; display: flex; flex-direction: column; justify-content: space-between;"><span class="tname" style="font-size: 26px; font-weight: 500; line-height: 1.15;">Moderated listings</span><span style="font-size: 15px; color: #C9CBE0;">Companies · removed if anything looks wrong</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOR COMPANIES: paragraph with interface words ================= -->
+<section id="companies" class="sec" style="background: #0F35DB; color: #FFFFFF; padding: 180px 0;">
+  <div class="frame">
+    <h2 class="hd head rise" style="margin: 0 0 56px; font-size: 64px;">For companies.</h2>
+    <p class="statement rise" style="margin: 0; width: 88%; max-width: 42ch; font-size: 36px; line-height: 1.35; font-weight: 500; letter-spacing: -0.015em;">Post a placement <span data-ui="" style="display: inline-flex; align-items: center; gap: 6px; height: 1.1em; padding: 0 14px; vertical-align: -0.18em; background: #FFFFFF; color: #00002E; font-size: 18px; font-weight: 500; border-radius: 14px 0 0 0;">SIWES · Mechanical · 400L</span> and only eligible students can apply. Filter them by discipline, level and location <span data-ui="" style="display: inline-flex; align-items: center; gap: 6px; height: 1.1em; padding: 0 14px; vertical-align: -0.18em; background: #00002E; color: #BCF7FB; font-size: 18px; font-weight: 500; border-radius: 14px 0 0 0;">Lagos, Ogun · 6 months</span>. Change a status <span data-ui="" style="display: inline-flex; align-items: center; gap: 6px; height: 1.1em; padding: 0 14px; vertical-align: -0.18em; background: #BCF7FB; color: #00002E; font-size: 18px; font-weight: 500; border-radius: 14px 0 0 0;">Shortlisted</span> and the student knows at once.</p>
+    <div class="split" style="margin-top: 72px; gap: 32px;">
+      <div class="hide-sm"></div>
+      <div style="display: flex; flex-direction: column; gap: 28px; align-items: flex-start;">
+        <p style="margin: 0; font-size: 18px; line-height: 1.55; max-width: 44ch;">Free for companies during launch. Get CAC-verified once and every listing reaches verified engineering students. AI shortlisting with clear match reasons is next.</p>
+        <a href="#signup-company" class="btn" style="display: inline-flex; align-items: center; gap: 10px; min-height: 56px; padding: 0 26px; background: #FFFFFF; color: #0F35DB; font-weight: 500; border-radius: 24px 0 0 0;">Post a placement
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section id="faq" class="sec faq" style="background: #F3F3F3; padding: 160px 0;">
+  <div class="frame faqgrid">
+    <div>
+      <div class="sticky" style="position: sticky; top: 96px; display: flex; flex-direction: column; gap: 32px;">
+        <h2 class="hd head rise" style="margin: 0; font-size: 64px;">Questions</h2>
+        <img src="/_blob/c8d559f8cdd5474f378a20a886583cd6" alt="Two builders standing on a wall at a construction site in Abuja" width="400" height="500" style="display: block; width: 100%; max-width: 380px; aspect-ratio: 4 / 5; object-fit: cover; object-position: 50% 35%; border-radius: 140px 0 0 0;">
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <details name="faq" open="{{yes}}">
+        <summary style="display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 72px; padding: 0 24px; font-size: 18px; font-weight: 500;">Is Fixth free for students?<span aria-hidden="true" style="position: relative; width: 16px; height: 16px; flex-shrink: 0;"><span style="position: absolute; left: 0; top: 6.5px; width: 16px; height: 3px; background: currentColor;"></span><span class="bar-v" style="position: absolute; left: 0; top: 6.5px; width: 16px; height: 3px; background: currentColor;"></span></span></summary>
+        <p class="faq-a" style="margin: 0; padding: 0 24px 24px; font-size: 18px; max-width: 52ch;">Yes. Companies can also post and recruit for free while Fixth is launching.</p>
+      </details>
+      <details name="faq">
+        <summary style="display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 72px; padding: 0 24px; font-size: 18px; font-weight: 500;">How does student verification work?<span aria-hidden="true" style="position: relative; width: 16px; height: 16px; flex-shrink: 0;"><span style="position: absolute; left: 0; top: 6.5px; width: 16px; height: 3px; background: currentColor;"></span><span class="bar-v" style="position: absolute; left: 0; top: 6.5px; width: 16px; height: 3px; background: currentColor;"></span></span></summary>
+        <p class="faq-a" style="margin: 0; padding: 0 24px 24px; font-size: 18px; max-width: 52ch;">Confirm your school email, upload your student ID or a portal screenshot, then take a quick live photo. You can browse while we review; applying unlocks once you’re verified.</p>
+      </details>
+      <details name="faq">
+        <summary style="display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 72px; padding: 0 24px; font-size: 18px; font-weight: 500;">I don’t have a school email. Can I join?<span aria-hidden="true" style="position: relative; width: 16px; height: 16px; flex-shrink: 0;"><span style="position: absolute; left: 0; top: 6.5px; width: 16px; height: 3px; background: currentColor;"></span><span class="bar-v" style="position: absolute; left: 0; top: 6.5px; width: 16px; height: 3px; background: currentColor;"></span></span></summary>
+        <p class="faq-a" style="margin: 0; padding: 0 24px 24px; font-size: 18px; max-width: 52ch;">Yes. Sign up with a personal email and submit your student ID and matric number for manual verification.</p>
+      </details>
+      <details name="faq">
+        <summary style="display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 72px; padding: 0 24px; font-size: 18px; font-weight: 500;">How are companies verified?<span aria-hidden="true" style="position: relative; width: 16px; height: 16px; flex-shrink: 0;"><span style="position: absolute; left: 0; top: 6.5px; width: 16px; height: 3px; background: currentColor;"></span><span class="bar-v" style="position: absolute; left: 0; top: 6.5px; width: 16px; height: 3px; background: currentColor;"></span></span></summary>
+        <p class="faq-a" style="margin: 0; padding: 0 24px 24px; font-size: 18px; max-width: 52ch;">Each company submits its CAC registration and is reviewed by the Fixth team. Its listings stay hidden until it’s approved.</p>
+      </details>
+      <details name="faq">
+        <summary style="display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 72px; padding: 0 24px; font-size: 18px; font-weight: 500;">Do I need a cover letter?<span aria-hidden="true" style="position: relative; width: 16px; height: 16px; flex-shrink: 0;"><span style="position: absolute; left: 0; top: 6.5px; width: 16px; height: 3px; background: currentColor;"></span><span class="bar-v" style="position: absolute; left: 0; top: 6.5px; width: 16px; height: 3px; background: currentColor;"></span></span></summary>
+        <p class="faq-a" style="margin: 0; padding: 0 24px 24px; font-size: 18px; max-width: 52ch;">No. Your Fixth profile and uploaded CV are your application, sent in one step.</p>
+      </details>
+      <details name="faq">
+        <summary style="display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 72px; padding: 0 24px; font-size: 18px; font-weight: 500;">Which disciplines and places are covered?<span aria-hidden="true" style="position: relative; width: 16px; height: 16px; flex-shrink: 0;"><span style="position: absolute; left: 0; top: 6.5px; width: 16px; height: 3px; background: currentColor;"></span><span class="bar-v" style="position: absolute; left: 0; top: 6.5px; width: 16px; height: 3px; background: currentColor;"></span></span></summary>
+        <p class="faq-a" style="margin: 0; padding: 0 24px 24px; font-size: 18px; max-width: 52ch;">Every engineering discipline, with placements across Nigeria. Filter by discipline, state and duration.</p>
+      </details>
+      <details name="faq">
+        <summary style="display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 72px; padding: 0 24px; font-size: 18px; font-weight: 500;">When will graduate roles arrive?<span aria-hidden="true" style="position: relative; width: 16px; height: 16px; flex-shrink: 0;"><span style="position: absolute; left: 0; top: 6.5px; width: 16px; height: 3px; background: currentColor;"></span><span class="bar-v" style="position: absolute; left: 0; top: 6.5px; width: 16px; height: 3px; background: currentColor;"></span></span></summary>
+        <p class="faq-a" style="margin: 0; padding: 0 24px 24px; font-size: 18px; max-width: 52ch;">Graduate trainee and entry-level roles for fresh graduates and NYSC members are planned after launch. Sign up and we’ll tell you first.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA: one word is the button ================= -->
+<section aria-label="Sign up" style="background: #F3F3F3; padding: 0 32px;">
+  <a href="#signup" class="cta" style="position: relative; height: 560px; border-radius: 160px 0 0 0; overflow: hidden;">
+    <span class="cta-line" style="position: absolute; top: 40px; left: 48px; max-width: 30ch; font-size: 18px; line-height: 1.4;">Create your verified student profile and start applying.</span>
+    <svg class="cta-arrow" style="position: absolute; top: 40px; right: 48px;" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
+    <span class="hd cta-word rise" style="position: absolute; left: 40px; bottom: 8px; font-size: 26vw; line-height: 0.8; letter-spacing: -0.05em;">Join</span>
+  </a>
+</section>
+
+<!-- ================= FOOTER: the mark, built large ================= -->
+<footer style="background: #F3F3F3; padding: 0 0 32px;">
+  <div style="background: #00002E; color: #F3F3F3; padding: 96px 0 40px;">
+    <div class="frame">
+      <span role="img" aria-label="fixth" style="display: block; color: #BCF7FB;"><svg viewBox="0 0 68 29" style="display: block; width: 100%; height: auto;" aria-hidden="true"><path fill="currentColor" d="M7.979 5.802l3.116 0 0 5.8-2.767 0.013c-1.528 0-2.767 1.295-2.767 2.893 0 1.598 1.24 2.893 2.767 2.893l2.767 0.013 0 5.8-3.116 0c-0.82642 0.00138-1.64753-0.13204-2.431-0.395l0 6.181-5.548 0 0-15.364 0.015 0c0.25-4.371 3.72-7.836 7.962-7.836l0.002 0.002z m36.079 0.38c0.78321-0.26252 1.60397-0.3956 2.43-0.394l3.117 0 0 5.8-2.767 0.013c-1.528 0-2.767 1.295-2.767 2.893 0 1.598 1.24 2.893 2.767 2.893l2.767 0.012 0 5.8-3.115 0-0.002 0.002c-4.242 0-7.712-3.464-7.962-7.835l-0.015 0 0-15.364 5.548 0-0.001 6.18z m-28.442 1.83c1.528 0 2.767 1.295 2.767 2.893l0 12.295-5.54601 0 0-12.295 0.01201 0c0-1.598 1.239-2.893 2.76699-2.893m21.154 3.587l-2.79 0.006-0.025 0.027c-1.515 0.014-2.739 1.297-2.742 2.877l0 0.007c0 1.593 1.24 2.883 2.767 2.883q0.127 0 0.25-0.012l2.53 0.012 0 5.8-3.141 0-0.038-0.012c-1.973-0.105-3.765-0.927-5.142-2.22-1.39721 1.32589-3.2198 2.11262-5.14299 2.22l-0.037 0.013-3.132-0.021 0-5.798 2.52 0.007c0.08311 0.00781 0.16652 0.01215 0.25 0.013 1.528 0 2.767-1.29 2.767-2.884l0-0.006c-0.003-1.582-1.227-2.863-2.741-2.877l-0.026-0.027-2.78 0.012 0-5.798 2.83 0 0.005 0.001 0.001-0.001c2.11 0.023 4.03 0.864 5.487 2.23 1.458-1.366 3.379-2.207 5.488-2.23l0.003-0.002 2.84-0.02-0.00101 5.8z m20.124-5.405c0.77583-0.25929 1.58801-0.39331 2.40601-0.397l0.74 0c4.398 0.013 7.96 3.74 7.96 8.336l0 9.067-5.55 0 0-8.702-0.013 0c0-1.594-1.235-2.888-2.762-2.891-1.527 0.003-2.762 1.297-2.76201 2.892l-0.01299 0 0 8.7-5.55 0 0-23.196 5.544 0-0.00001 6.191z m-41.277-6.192c1.528 0 2.767 1.295 2.767 2.893 0 1.598-1.239 2.893-2.767 2.893-1.528 0-2.767-1.296-2.767-2.893 0-1.598 1.24-2.893 2.767-2.893m35.733 0l-0.001 0 0.00101-0.002-0.00001 0.002z"/></svg></span>
+      <div class="links" style="margin-top: 56px; font-size: 15px;">
+        <nav aria-label="Students" style="display: flex; flex-direction: column; gap: 10px;"><span style="font-weight: 500; color: #FFFFFF;">Students</span><a href="#signup">Create a profile</a><a href="#find">Find placements</a><a href="#how">How it works</a></nav>
+        <nav aria-label="Companies" style="display: flex; flex-direction: column; gap: 10px;"><span style="font-weight: 500; color: #FFFFFF;">Companies</span><a href="#signup-company">Post a placement</a><a href="#trust">Verification</a><a href="#companies">Pricing</a></nav>
+        <nav aria-label="Fixth" style="display: flex; flex-direction: column; gap: 10px;"><span style="font-weight: 500; color: #FFFFFF;">Fixth</span><a href="#">About</a><a href="#trust">Trust and safety</a><a href="#faq">Questions</a></nav>
+        <nav aria-label="Legal" style="display: flex; flex-direction: column; gap: 10px;"><span style="font-weight: 500; color: #FFFFFF;">Legal</span><a href="#">Terms of use</a><a href="#">Privacy policy</a><a href="#">Cookie policy</a></nav>
+        <div style="display: flex; flex-direction: column; gap: 10px;"><span style="font-weight: 500; color: #FFFFFF;">Talk to us</span><a href="mailto:[hello@fixth.ng]">[hello@fixth.ng]</a><span>[Office address, Lagos]</span></div>
+      </div>
+      <p style="margin: 48px 0 0; font-size: 15px; line-height: 1.6; color: #C9CBE0; max-width: 75ch;">Pictures: “Female Aircraft Engineers, Kwara State, Nigeria” by Eyibeauty Oyelowo; “Egbin Thermal Power Station admin section” by Stellaolugbemi; “River Niger at Kainji Dam Niger State” by Samuel Ayenajeh; “A welding” by Hafsat Mohammad Sani (all CC BY-SA 4.0); “Abuja Builders” by Mark Fischer (CC BY-SA 2.0). All via Wikimedia Commons; they show engineering in Nigeria, not Fixth users.</p>
+      <div style="margin-top: 32px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 15px;">
+        <span>© 2026 Fixth</span>
+        <a href="#top" class="btn" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; background: #0D0D4D; color: #FFFFFF; border-radius: 16px 0 0 0;">Back to top</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":7800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { disc: 'Mechanical', tab: 'siwes' };
+  }
+  renderVals() {
+    const data = {
+      Mechanical: [
+        ['OS', 'SIWES · Mechanical maintenance', 'Ogun Steel Works', 'Sagamu, Ogun', '6 months', '400L'],
+        ['DP', 'IT · Rotating equipment', 'Delta Process Engineering', 'Warri, Delta', '6 months', '300–400L'],
+        ['KH', 'Internship · HVAC design', 'Kano Hydraulics', 'Kano', '3 months', '300L+']
+      ],
+      Electrical: [
+        ['KP', 'SIWES · Substation operations', 'Kainji Power Services', 'New Bussa, Niger', '6 months', '400L'],
+        ['LG', 'Internship · Solar installation', 'Lagos Grid Solar', 'Ikeja, Lagos', '3 months', '300L+'],
+        ['AE', 'IT · Control panels', 'Abuja Electrics', 'Abuja', '6 months', '300–400L']
+      ],
+      Civil: [
+        ['LS', 'SIWES · Site engineering', 'Lekki Structures', 'Lekki, Lagos', '6 months', '400L'],
+        ['NR', 'IT · Road survey', 'Niger Roads & Bridges', 'Minna, Niger', '6 months', '300L+'],
+        ['PH', 'Internship · Drainage design', 'Port Harcourt Works', 'Port Harcourt', '3 months', '300L+']
+      ],
+      Chemical: [
+        ['DP', 'SIWES · Process plant', 'Delta Process Engineering', 'Warri, Delta', '6 months', '400L'],
+        ['OW', 'IT · Water treatment', 'Ogun Water Works', 'Abeokuta, Ogun', '6 months', '300–400L'],
+        ['KF', 'Internship · Quality lab', 'Kaduna Foods', 'Kaduna', '3 months', '300L+']
+      ],
+      Petroleum: [
+        ['BR', 'SIWES · Field operations', 'Bonny River Energy', 'Bonny, Rivers', '6 months', '400L'],
+        ['EO', 'IT · Reservoir data', 'Eko Offshore', 'Victoria Island, Lagos', '6 months', '400L'],
+        ['WP', 'Internship · Pipeline integrity', 'Warri Pipelines', 'Warri, Delta', '3 months', '300L+']
+      ],
+      Computer: [
+        ['IL', 'SIWES · Embedded systems', 'Ibadan Labs', 'Ibadan, Oyo', '6 months', '400L'],
+        ['YT', 'Internship · Network engineering', 'Yaba Telecoms', 'Yaba, Lagos', '3 months', '300L+'],
+        ['AE', 'IT · SCADA software', 'Abuja Electrics', 'Abuja', '6 months', '300–400L']
+      ]
+    };
+    const marks = [['#00002E', '#BCF7FB'], ['#0F35DB', '#FFFFFF'], ['#BCF7FB', '#00002E']];
+    const names = Object.keys(data);
+    const disc = this.state.disc;
+    const discs = names.map((n) => ({
+      name: n,
+      pressed: n === disc ? 'true' : 'false',
+      bg: n === disc ? '#00002E' : '#FFFFFF',
+      fg: n === disc ? '#FFFFFF' : '#00002E',
+      pick: () => this.setState({ disc: n })
+    }));
+    const rows = data[disc];
+    const listings = rows.map((r, i) => ({
+      mark: r[0], role: r[1], company: r[2], where: r[3], length: r[4], level: r[5],
+      markBg: marks[i][0], markFg: marks[i][1],
+      radius: i === 0 ? '28px 0 0 0' : '0'
+    }));
+
+    const shows = {
+      siwes: {
+        name: 'SIWES', title: 'SIWES placements',
+        desc: 'The industrial attachment your degree requires, matched to your discipline, level and the months you are free. Apply before your logbook starts, not after.',
+        primary: 'Browse SIWES placements',
+        photo: '/_blob/36db8debf955ae1446c8234252e2a209', pos: '30% 50%',
+        alt: 'Two women in navy overalls servicing the engine of a light aircraft in a hangar',
+        caption: 'Aircraft maintenance, Kwara State.'
+      },
+      it: {
+        name: 'Industrial training', title: 'Industrial training',
+        desc: 'Structured on-site programmes in workshops, plants and sites across Nigeria, with duration and stipend on every listing.',
+        primary: 'Browse IT programmes',
+        photo: '/_blob/28dccb5cf0f78e1f1d91be395b029c85', pos: '55% 50%',
+        alt: 'A metalworker welding the frame of a steel kiosk at a roadside workshop',
+        caption: 'Fabrication workshop, northern Nigeria.'
+      },
+      intern: {
+        name: 'Internships', title: 'Internships',
+        desc: 'Paid and unpaid internships with verified companies. Location, duration and stipend are listed before you apply.',
+        primary: 'Browse internships',
+        photo: '/_blob/7eff6bb75d2814713368f5f6588ba05d', pos: '50% 35%',
+        alt: 'Two engineers in hard hats reading a document at Egbin power station',
+        caption: 'Egbin power station, Lagos.'
+      }
+    };
+    const tab = this.state.tab;
+    const tabs = Object.keys(shows).map((k) => ({
+      name: shows[k].name,
+      sel: k === tab ? 'true' : 'false',
+      fg: k === tab ? '#FFFFFF' : '#A9ABC8',
+      line: k === tab ? '#BCF7FB' : 'transparent',
+      pick: () => this.setState({ tab: k })
+    }));
+    return { discs, listings, tabs, show: shows[tab], yes: true };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Main.dc.html": {
+      "expand": "fill",
+      "h": 7400,
+      "title": "Landing page — desktop",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "Mobile.dc.html": {
+      "h": 8000,
+      "title": "Landing page — phone (390)",
+      "w": 390,
+      "x": 1560,
+      "y": 0
+    },
+    "V2Desktop.dc.html": {
+      "expand": "fill",
+      "h": 7800,
+      "is_interactive": true,
+      "title": "V2 — desktop (One motif)",
+      "w": 1440,
+      "x": 2150,
+      "y": 0
+    },
+    "V2Mobile.dc.html": {
+      "h": 8000,
+      "is_interactive": true,
+      "title": "V2 — phone (390)",
+      "w": 390,
+      "x": 3710,
+      "y": 0
+    },
+    "V3Desktop.dc.html": {
+      "expand": "fill",
+      "h": 7600,
+      "title": "V3 — desktop (Adire blue)",
+      "w": 1440,
+      "x": 4300,
+      "y": 0
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-21T23:30:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "v1title": {
+      "kind": "title1",
+      "maxW": 1950,
+      "text": "Version 1",
+      "w": 240,
+      "x": 0,
+      "y": -320
+    },
+    "v2title": {
+      "kind": "title1",
+      "maxW": 1950,
+      "text": "Version 2 — One motif",
+      "w": 240,
+      "x": 2150,
+      "y": -320
+    },
+    "v3title": {
+      "kind": "title1",
+      "maxW": 1440,
+      "text": "Version 3 — Adire blue",
+      "x": 4300,
+      "y": -320
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Mobile.dc.html",
+    "V2Desktop.dc.html",
+    "V2Mobile.dc.html",
+    "V3Desktop.dc.html"
+  ],
+  "pages": [],
+  "title": "Fixth Landing Redesign"
+}
