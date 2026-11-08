@@ -1,6 +1,6 @@
 ﻿import { useEffect, useRef, useState, type SubmitEvent } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router'
-import { ArrowLeft, ShieldCheck, Upload } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, CheckCircle2, ShieldCheck, Upload } from 'lucide-react'
 import AuthShell from './components/AuthShell'
 import ProgressSteps from './components/ProgressSteps'
 import PrimaryButton from './components/PrimaryButton'
@@ -9,6 +9,7 @@ import { clearDraft, flows, readDraft, saveDraft, type Draft, type Track } from 
 import { passwordError, passwordRules } from '@/lib/password'
 import { useAuth } from '@/features/auth/useAuth'
 import { completeOrganizationOnboarding, completeStudentOnboarding, requestOrganizationOtp, requestStudentOtp, verifyOrganizationOtp, verifyStudentOtp } from '@/services/onboarding'
+import { uploadStudentPhoto } from '@/services/studentMedia'
 import { ApiError } from '@/services/http'
 import { apiErrorMessage } from '@/services/types'
 
@@ -17,6 +18,8 @@ const timestamp = () => Date.now()
 
 /** File inputs cannot be serialized to sessionStorage; keep the logo for this tab. */
 const pendingOrganizationLogos = new Map<string, { email: string; file: File }>()
+/** Same for the optional student onboarding photo, uploaded right after sign-up. */
+const pendingStudentPhotos = new Map<string, { email: string; file: File }>()
 
 export default function OnboardingPage() {
   const { track, step = 'email' } = useParams()
@@ -36,7 +39,13 @@ function OnboardingFlow({ track, slug }: { track: Track; slug: string }) {
   const [cooldown, setCooldown] = useState(0)
   const codeSentAt = Number(draft.lastCodeAt || 0)
   const [message, setMessage] = useState('')
+  const [messageTone, setMessageTone] = useState<'error' | 'status'>('error')
   const [errors, setErrors] = useState<Record<string, string>>({})
+  /** Notices render as alert banners; pass 'status' for confirmation notices. */
+  const notify = (text: string, tone: 'error' | 'status' = 'error') => {
+    setMessage(text)
+    setMessageTone(tone)
+  }
   const heading = useRef<HTMLHeadingElement>(null)
   useEffect(() => { heading.current?.focus({ preventScroll: true }); document.getElementById('auth-content')?.scrollTo(0, 0) }, [slug])
   useEffect(() => {
@@ -94,7 +103,7 @@ function OnboardingFlow({ track, slug }: { track: Track; slug: string }) {
     update('skills', (isSkillSelected(skill) ? selected.filter(item => item.toLowerCase() !== skill.toLowerCase()) : [...selected, skill]).join(','))
   }
   if (slug === 'complete') {
-    if (organization) return <AuthShell brand="" organization story="Your next chapter starts here."><div className="onboarding-form"><ShieldCheck className="size-12 text-brand" aria-hidden /><h1 ref={heading} tabIndex={-1}>You’re all set</h1><p>Your organization is set up and you’re signed in. Set a password from the sign-in page so you can sign in again on another device.</p><Link className="auth-secondary-link" to="/company/placements">Go to company workspace</Link><Link className="auth-text-link" to="/auth/organization/forgot-password">Set a password →</Link><Link className="auth-text-link" to="/">Back to home</Link></div></AuthShell>
+    if (organization) return <AuthShell brand="" organization story="Your next chapter starts here."><div className="onboarding-form"><ShieldCheck className="size-12 text-brand" aria-hidden /><h1 ref={heading} tabIndex={-1}>You’re all set</h1><p>Your organization is set up and you’re signed in. Use the password you created during onboarding to sign in again on another device.</p><Link className="auth-secondary-link" to="/company/placements">Go to company workspace</Link><Link className="auth-text-link" to="/auth/organization/forgot-password">Forgot your password? Reset it →</Link><Link className="auth-text-link" to="/">Back to home</Link></div></AuthShell>
     return <AuthShell brand="" story="Your next chapter starts here."><div className="onboarding-form"><ShieldCheck className="size-12 text-brand" aria-hidden /><h1 ref={heading} tabIndex={-1}>You’re all set</h1><p>Your student account is ready and you’re signed in. Start discovering verified placements matched to your discipline.</p><Link className="auth-secondary-link" to="/student/discover">Discover placements</Link><Link className="auth-text-link" to="/student/profile">View your profile →</Link><Link className="auth-text-link" to="/">Back to home</Link></div></AuthShell>
   }
   if (!step) return <Navigate to={`${base}/email`} replace />
@@ -114,7 +123,7 @@ function OnboardingFlow({ track, slug }: { track: Track; slug: string }) {
       patchDraft({ lastCodeAt: String(timestamp()) })
       return true
     } catch (error) {
-      setMessage(
+      notify(
         error instanceof ApiError
           ? error.status === 429
             ? 'Too many requests. Please wait before requesting another code.'
@@ -141,7 +150,7 @@ function OnboardingFlow({ track, slug }: { track: Track; slug: string }) {
       }
       return true
     } catch (error) {
-      setMessage(
+      notify(
         error instanceof ApiError
           ? error.status === 429
             ? 'Too many attempts. Please wait before trying again.'
@@ -164,7 +173,7 @@ function OnboardingFlow({ track, slug }: { track: Track; slug: string }) {
     }
     if (slug === 'review') {
       setBusy(true)
-      setMessage('')
+      notify('')
       try {
         const result = await completeStudentOnboarding({
           email: draft.email,
@@ -180,15 +189,26 @@ function OnboardingFlow({ track, slug }: { track: Track; slug: string }) {
           skills: selected,
         })
         establishSession('student', { access: result.access, refresh: result.refresh, user: result.user })
+        // The account already exists if we get here, so a photo problem must
+        // not roll back onboarding; it can be re-uploaded from the profile.
+        const pendingPhoto = pendingStudentPhotos.get('student')
+        if (pendingPhoto && pendingPhoto.email === draft.email) {
+          pendingStudentPhotos.delete('student')
+          try {
+            await uploadStudentPhoto(pendingPhoto.file)
+          } catch {
+            // Optional media: the profile editor can retry it.
+          }
+        }
         clearDraft('student')
         return 'complete'
       } catch (error) {
         if (error instanceof ApiError) {
-          if (error.status === 409) setMessage('This email is already registered. Try signing in instead.')
-          else if (error.status === 429) setMessage('Too many attempts. Please wait before trying again.')
-          else setMessage(apiErrorMessage(error.body, 'Your details could not be saved. Please review them and try again.'))
+          if (error.status === 409) notify('This email is already registered. Try signing in instead.')
+          else if (error.status === 429) notify('Too many attempts. Please wait before trying again.')
+          else notify(apiErrorMessage(error.body, 'Your details could not be saved. Please review them and try again.'))
         } else {
-          setMessage('Could not reach the server. Check your connection and try again.')
+          notify('Could not reach the server. Check your connection and try again.')
         }
         return null
       } finally {
@@ -207,12 +227,13 @@ function OnboardingFlow({ track, slug }: { track: Track; slug: string }) {
     }
     if (slug === 'review') {
       setBusy(true)
-      setMessage('')
+      notify('')
       try {
         const result = await completeOrganizationOnboarding({
           verificationToken: draft.verificationToken,
           organizationName: draft.organization,
           workEmail: draft.email,
+          ...(draft.password ? { password: draft.password } : {}),
           industry: draft.industry,
           country: draft.country,
           city: draft.city,
@@ -234,13 +255,13 @@ function OnboardingFlow({ track, slug }: { track: Track; slug: string }) {
         return 'complete'
       } catch (error) {
         if (error instanceof ApiError) {
-          if (error.status === 409) setMessage('This email is already registered. Try signing in instead.')
-          else if (error.status === 413) setMessage(apiErrorMessage(error.body, 'The logo is too large. Use a file up to 5 MB and 4096 px.'))
-          else if (error.status === 415) setMessage(apiErrorMessage(error.body, 'Upload a JPEG, PNG, or WebP logo.'))
-          else if (error.status === 429) setMessage('Too many attempts. Please wait before trying again.')
-          else setMessage(apiErrorMessage(error.body, 'Your organization could not be created. Review your details and try again.'))
+          if (error.status === 409) notify('This email is already registered. Try signing in instead.')
+          else if (error.status === 413) notify(apiErrorMessage(error.body, 'The logo is too large. Use a file up to 5 MB and 4096 px.'))
+          else if (error.status === 415) notify(apiErrorMessage(error.body, 'Upload a JPEG, PNG, or WebP logo.'))
+          else if (error.status === 429) notify('Too many attempts. Please wait before trying again.')
+          else notify(apiErrorMessage(error.body, 'Your organization could not be created. Review your details and try again.'))
         } else {
-          setMessage('Could not reach the server. Check your connection and try again.')
+          notify('Could not reach the server. Check your connection and try again.')
         }
         return null
       } finally {
@@ -253,14 +274,14 @@ function OnboardingFlow({ track, slug }: { track: Track; slug: string }) {
   const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (busy) return
-    if (slug === 'code' && !/^\d{6}$/.test(code)) { setMessage('Enter all six digits.'); return }
+    if (slug === 'code' && !/^\d{6}$/.test(code)) { notify('Enter all six digits.'); return }
     if (slug === 'password') {
       const error = keepingExistingPassword ? null : passwordError(password, draft.email) || (password !== confirm ? 'Passwords do not match.' : '')
-      if (error) { setMessage(error); return }
-      if (!keepingExistingPassword) patchDraft({ passwordSet: 'true', ...(!organization ? { password } : {}) })
+      if (error) { notify(error); return }
+      if (!keepingExistingPassword) patchDraft({ passwordSet: 'true', password })
       setPassword(''); setConfirm('')
     }
-    if (slug === 'skills' && !selected.length) { setMessage('Select at least one skill to continue.'); return }
+    if (slug === 'skills' && !selected.length) { notify('Select at least one skill to continue.'); return }
     if (slug === 'review' && organization) {
       if (!draft.verificationToken) { navigate(`${base}/code`); return }
       const missing = steps.find(item => item.fields?.some(field => !field.optional && !draft[field.name]?.trim()) || (item.slug === 'skills' && !selected.length))
@@ -277,8 +298,8 @@ function OnboardingFlow({ track, slug }: { track: Track; slug: string }) {
     if (next) navigate(`${base}/${next}`)
   }
   const rows = organization
-    ? [['Organization', draft.organization, 'details'], ['Work email', draft.email, 'email'], ['Industry', draft.industry, 'details'], ['Location', [draft.city, draft.country].filter(Boolean).join(', '), 'story'], ['Website', draft.website, 'details']]
-    : [['Profile', [draft.firstName, draft.lastName].filter(Boolean).join(' '), 'about'], ['Email', draft.email, 'email'], ['Location', draft.location, 'about'], ['Education', [draft.course, draft.level].filter(Boolean).join(' · '), 'education'], ['Skills', selected.join(', '), 'skills']]
+    ? [['Organization', draft.organization, 'details'], ['Work email', draft.email, 'email'], ['Password', draft.passwordSet ? 'Set' : 'Not set', 'password'], ['Industry', draft.industry, 'details'], ['Location', [draft.city, draft.country].filter(Boolean).join(', '), 'story'], ['Website', draft.website, 'details']]
+    : [['Profile', [draft.firstName, draft.lastName].filter(Boolean).join(' '), 'about'], ['Email', draft.email, 'email'], ['Password', draft.passwordSet ? 'Set' : 'Not set', 'password'], ['Location', draft.location, 'about'], ['Education', [draft.course, draft.level].filter(Boolean).join(' · '), 'education'], ['Skills', selected.join(', '), 'skills']]
   const autocomplete: Record<string, string> = { email: 'email', firstName: 'given-name', lastName: 'family-name', phone: 'tel', location: 'address-level2', organization: 'organization', website: 'url', country: 'country-name', city: 'address-level2', address: 'street-address' }
   return <AuthShell brand="" organization={organization} story={step.story}>
     <form className="onboarding-form" onSubmit={submit} key={slug} onInvalidCapture={e => {
@@ -290,14 +311,15 @@ function OnboardingFlow({ track, slug }: { track: Track; slug: string }) {
       <p className="auth-eyebrow">{organization ? 'Organization' : 'Student'} profile · Step {index + 1} of {steps.length}</p>
       <h1 ref={heading} tabIndex={-1}>{step.title}</h1>
       <p>{slug === 'code' ? `Enter the 6-digit code for ${draft.email || 'your email address'}.` : step.subtitle}</p>
-      {step.upload && <label className="auth-upload"><Upload className="size-5 text-brand" aria-hidden /><span>{draft[`${slug}File`] || step.upload}</span><input name="attachment" type="file" accept={slug === 'education' ? '.pdf,.jpg,.jpeg,.png' : organization && slug === 'details' ? '.jpg,.jpeg,.png,.webp' : 'image/*'} aria-describedby="upload-note" onChange={e => {
+      {step.upload && <label className="auth-upload"><Upload className="size-5 text-brand" aria-hidden /><span>{draft[`${slug}File`] || step.upload}</span><input name="attachment" type="file" accept={slug === 'education' ? '.pdf,.jpg,.jpeg,.png' : organization && slug === 'details' ? '.jpg,.jpeg,.png,.webp' : 'image/png,image/jpeg,image/webp'} aria-describedby="upload-note" onChange={e => {
         const file = e.target.files?.[0]
         if (!file) return
-        if (file.size > 5 * 1024 * 1024) { setMessage('Choose a file smaller than 5 MB.'); e.target.value = ''; return }
-        if (slug === 'education' ? !/\.(pdf|jpg|jpeg|png)$/i.test(file.name) : organization && slug === 'details' ? !/^image\/(jpeg|png|webp)$/.test(file.type) && !/\.(jpe?g|png|webp)$/i.test(file.name) : !file.type.startsWith('image/')) { setMessage('Choose a supported file type.'); e.target.value = ''; return }
+        if (file.size > (slug === 'about' ? 2 * 1024 * 1024 : 5 * 1024 * 1024)) { notify(slug === 'about' ? 'Choose a photo smaller than 2 MB.' : 'Choose a file smaller than 5 MB.'); e.target.value = ''; return }
+        if (slug === 'education' ? !/\.(pdf|jpg|jpeg|png)$/i.test(file.name) : organization && slug === 'details' ? !/^image\/(jpeg|png|webp)$/.test(file.type) && !/\.(jpe?g|png|webp)$/i.test(file.name) : !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { notify('Choose a supported file type.'); e.target.value = ''; return }
         if (organization && slug === 'details') pendingOrganizationLogos.set('organization', { email: draft.email, file })
-        update(`${slug}File`, file.name); setMessage('')
-      }} /><small id="upload-note">{organization && slug === 'details' ? 'JPEG, PNG, or WebP, maximum 5 MB. Uploaded when you finish.' : 'Maximum 5 MB. Your selection stays local to this preview.'}</small></label>}
+        else if (slug === 'about') pendingStudentPhotos.set('student', { email: draft.email, file })
+        update(`${slug}File`, file.name); notify('')
+      }} /><small id="upload-note">{organization && slug === 'details' ? 'JPEG, PNG, or WebP, maximum 5 MB. Uploaded when you finish.' : slug === 'about' ? 'PNG, JPEG, or WebP, maximum 2 MB. Saved to your profile when you finish.' : 'Maximum 5 MB. Your selection stays local to this preview.'}</small></label>}
       {step.fields?.map(field => <label className="auth-field" key={field.name}>
         <span>{field.label}{field.optional ? ' (optional)' : ''}</span>
         {field.options ? <select name={field.name} required={!field.optional} value={draft[field.name] || ''} aria-invalid={!!errors[field.name] || undefined} aria-describedby={errors[field.name] ? `${field.name}-error` : undefined} onChange={e => update(field.name, e.target.value)}><option value="">Select {field.label.toLowerCase()}</option>{field.options.map(option => <option key={option}>{option}</option>)}</select>
@@ -330,9 +352,14 @@ function OnboardingFlow({ track, slug }: { track: Track; slug: string }) {
       </>}
       {slug === 'review' && <><dl className="auth-review">{rows.map(([label, value, target]) => <div key={label}><dt>{label}</dt><dd>{value || 'Not provided'}</dd><Link to={`${base}/${target}`} aria-label={`Edit ${label?.toLowerCase()}`}>Edit</Link></div>)}</dl><p className="auth-note">{organization ? 'Company details are saved when you finish. Contact Fixth support to change them later.' : 'Everything looks ready. You can edit this information later.'}</p></>}
       {slug === 'email' && <div className="auth-note"><ShieldCheck className="size-4 shrink-0 text-brand" aria-hidden /><span>{organization ? 'Your company email' : 'Your email'} stays private and secure.</span></div>}
-      <p role="alert" className="auth-field-error">{message}</p>
+      {message && (
+        <p role="alert" className="auth-alert" data-tone={messageTone}>
+          {messageTone === 'status' ? <CheckCircle2 size={16} aria-hidden /> : <AlertTriangle size={16} aria-hidden />}
+          <span>{message}</span>
+        </p>
+      )}
       <div className="auth-actions">{index > 0 && <Link to={`${base}/${steps[index - 1]!.slug}`} className="auth-back"><ArrowLeft className="size-4" aria-hidden />Back</Link>}<PrimaryButton type="submit" disabled={busy || (slug === 'password' && !passwordValid)}>{busy ? 'Please wait…' : slug === 'email' ? 'Send verification code' : slug === 'code' ? 'Verify and continue' : slug === 'review' ? 'Save and finish' : 'Continue'}</PrimaryButton></div>
-      {slug === 'code' && <button type="button" className="auth-text-link" disabled={busy || cooldown > 0} onClick={async () => { if (await requestCode()) setMessage('A new code is on its way.') }}>{cooldown > 0 ? `Resend code in ${cooldown}s` : 'Didn’t receive it? Resend code'}</button>}
+      {slug === 'code' && <button type="button" className="auth-text-link" disabled={busy || cooldown > 0} onClick={async () => { if (await requestCode()) notify('A new code is on its way.', 'status') }}>{cooldown > 0 ? `Resend code in ${cooldown}s` : 'Didn’t receive it? Resend code'}</button>}
     </form>
   </AuthShell>
 }

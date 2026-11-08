@@ -598,6 +598,7 @@ Content-Type: multipart/form-data
 | `verification_token` | Yes | From `/auth/otp/verify/` with `track=organization` |
 | `organization_name` | Yes | Max 200 |
 | `work_email` | Yes | Must match the verified token email |
+| `password` | No | Django password rules (min 8, not common, not digits only); blank/omitted leaves the account passwordless |
 | `industry` | Yes | Company industry enum |
 | `country` | Yes | Max 100 |
 | `city` | Yes | Max 100 |
@@ -629,7 +630,7 @@ This endpoint rejects JSON with `415`. Use `FormData`; do not manually set the m
 
 Errors: `400` invalid/expired token or email mismatch, `409` email already registered, `413`, `415`, `429`.
 
-The verification token is single-use. Organization accounts are passwordless by default; use the organization password-reset flow to set a password before password-based sign-in.
+The verification token is single-use. When `password` is omitted (or blank), the account is passwordless and sets one through the organization password-reset flow before password-based sign-in. Weak passwords are rejected with `400` and `password` field errors; account creation is atomic, so a rejected password consumes nothing.
 
 ---
 
@@ -855,6 +856,8 @@ Required: `first_name`, `last_name`, `location`, `institution`, `discipline`, `l
 **201** `StudentProfile`
 
 `409` if a profile already exists for the account.
+
+Profiles created by student onboarding start with `verification_status: "Verified"` (product decision: students are trusted at sign-up). Verification submission is only needed to move a `Rejected` profile back to `Pending`.
 
 ### 6.4 Update the student profile
 
@@ -1197,10 +1200,10 @@ Publishing (`status="Active"`) requires complete content:
 
 ```text
 title, location, work_style, duration, discipline, level,
-description, responsibilities, requirements, stipend_amount
+description, responsibilities, requirements
 ```
 
-`stipend_amount` must be positive. Missing content returns `400` and the placement remains in its current state. An illegal transition returns `409`.
+The monthly stipend is optional: `stipend_amount` may be null or `0` for unpaid internships, but it cannot be negative. Missing content returns `400` and the placement remains in its current state. An illegal transition returns `409`.
 
 **200** `Placement`
 

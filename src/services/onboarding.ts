@@ -90,6 +90,7 @@ export interface OrganizationOnboardingPayload {
   verificationToken: string
   organizationName: string
   workEmail: string
+  password?: string
   industry: string
   country: string
   city: string
@@ -106,6 +107,7 @@ export function completeOrganizationOnboarding(
   form.set('verification_token', payload.verificationToken)
   form.set('organization_name', payload.organizationName)
   form.set('work_email', payload.workEmail)
+  if (payload.password) form.set('password', payload.password)
   form.set('industry', payload.industry)
   form.set('country', payload.country)
   form.set('city', payload.city)

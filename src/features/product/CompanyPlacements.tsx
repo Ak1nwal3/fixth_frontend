@@ -501,8 +501,8 @@ export function PlacementEditorPage() {
       if (!form.responsibilities.trim()) errors.responsibilities = 'Add responsibilities.'
       if (!form.requirements.trim()) errors.requirements = 'Add requirements.'
       const stipend = Number(form.stipendAmount)
-      if (!form.stipendAmount.trim() || !Number.isFinite(stipend) || stipend <= 0) {
-        errors.stipendAmount = 'A positive monthly stipend is required to publish.'
+      if (form.stipendAmount.trim() && (!Number.isFinite(stipend) || stipend < 0)) {
+        errors.stipendAmount = stipend < 0 ? 'Stipend cannot be negative.' : 'Enter a valid stipend amount.'
       }
     } else if (form.stipendAmount.trim()) {
       const stipend = Number(form.stipendAmount)
@@ -606,7 +606,7 @@ export function PlacementEditorPage() {
         </div>
         <p>
           Required information is shown to students before they apply. Publishing requires a
-          complete listing and a positive monthly stipend.
+          complete listing; the monthly stipend is optional for unpaid internships.
         </p>
         {message && (
           <p role="alert" className="p-error">
@@ -718,7 +718,7 @@ export function PlacementEditorPage() {
               {fieldErrors.duration && <span className="p-error">{fieldErrors.duration}</span>}
             </Field>
             <Field className="p-field">
-              <span>Monthly stipend (NGN) *</span>
+              <span>Monthly stipend (NGN) · optional</span>
               <input
                 name="stipendAmount"
                 type="number"
@@ -735,7 +735,8 @@ export function PlacementEditorPage() {
             </Field>
           </div>
           <p className="p-small">
-            Stipend currency is NGN. The amount is visible to eligible students on the listing.
+            Stipend currency is NGN. Leave it empty for an unpaid internship — students see
+            “Not specified” on the listing.
           </p>
           <div className="p-actions">
             {canSaveDraft && (
@@ -775,7 +776,7 @@ export function PlacementEditorPage() {
             <li>Clear title and role description</li>
             <li>Eligible discipline and academic level</li>
             <li>Location, work style, and duration</li>
-            <li>A positive monthly stipend</li>
+            <li>Optional monthly stipend for paid roles</li>
             <li>Specific responsibilities and requirements</li>
           </ul>
           <p className="p-small">
@@ -803,7 +804,7 @@ export function PlacementEditorPage() {
             </p>
             <p>
               {form.workStyle} · {form.duration || 'Duration'} ·{' '}
-              {form.stipendAmount ? `₦${Number(form.stipendAmount).toLocaleString()}` : 'Stipend'}
+              {form.stipendAmount ? `₦${Number(form.stipendAmount).toLocaleString()}` : 'Not specified'}
             </p>
             <h4>Description</h4>
             <p>{form.description || 'No description yet.'}</p>

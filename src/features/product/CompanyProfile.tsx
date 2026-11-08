@@ -470,8 +470,8 @@ export function CompanyProfilePage() {
           <Panel>
             <h2>Change password</h2>
             <p>
-              Organization accounts created during onboarding start passwordless. Use the reset
-              email link if you have not set a password yet, then update it here.
+              Update the password you chose during onboarding. If you have forgotten it, use the
+              reset email link first, then update it here.
             </p>
             {passwordMessage && (
               <p

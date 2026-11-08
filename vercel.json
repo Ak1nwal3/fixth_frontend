@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/v1/(.*)",
+      "destination": "https://fixth-back.onrender.com/api/v1/$1"
+    },
+    {
+      "source": "/((?!api/v1/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

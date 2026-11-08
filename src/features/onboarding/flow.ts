@@ -6,7 +6,7 @@ const email: Step = { slug: 'email', title: 'Verify your work email', subtitle: 
 const code: Step = { slug: 'code', title: 'Enter your verification code', subtitle: 'Enter the 6-digit code sent to your email.', story: 'One quick check, then we’ll set up your organization.' }
 const password: Step = { slug: 'password', title: 'Create your password', subtitle: 'Use at least 8 characters with a letter and a number.', story: 'One password, then your profile is ready to go.' }
 export const flows: Record<Track, Step[]> = {
-  organization: [email, code,
+  organization: [email, code, { ...password, story: 'One password, then your organization is ready to go.' },
     { slug: 'details', title: 'Organization details', subtitle: 'Tell students the essentials about your organization.', story: 'Build a credible presence students can trust.', upload: 'Upload logo', fields: [{ name: 'organization', label: 'Organization name' }, { name: 'website', label: 'Website', placeholder: 'yourcompany.com', optional: true }, { name: 'industry', label: 'Industry', options: ['Technology', 'Engineering', 'Construction', 'Manufacturing', 'Energy', 'Other'] }] },
     { slug: 'story', title: 'Tell students about you', subtitle: 'Help candidates understand your mission and location.', story: 'Share what makes your organization a great place to grow.', fields: [{ name: 'description', label: 'Short description', type: 'textarea', optional: true }, { name: 'country', label: 'Country' }, { name: 'city', label: 'City' }, { name: 'address', label: 'Office address', optional: true }] },
     { slug: 'review', title: 'Review your organization', subtitle: 'Confirm your information before publishing.', story: 'You’re ready to meet your next great intern.' }],
