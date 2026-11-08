@@ -1,6 +1,7 @@
 ﻿import { createBrowserRouter, Navigate } from 'react-router'
 import RootLayout from '@/components/layout/RootLayout'
 import SignInPage from '@/features/auth/SignInPage'
+import HomePage from '@/features/home/HomePage'
 import LandingPage from '@/features/landing/LandingPage'
 import OnboardingPage from '@/features/onboarding/OnboardingPage'
 import ProductLayout from '@/features/product/ProductLayout'
@@ -11,7 +12,8 @@ import { CompanyPlacementsPage, PlacementEditorPage, ApplicantsPage, ApplicantRe
 import { VerificationQueuePage, VerificationReviewPage, ModerationPage, AccountsPage, AuditPage } from '@/features/product/AdminPages'
 import NotFoundPage from '@/pages/NotFoundPage'
 export const router = createBrowserRouter([{ path: '/', element: <RootLayout />, children: [
-  { index: true, element: <LandingPage /> },
+  { index: true, element: <HomePage /> },
+  { path: 'old', element: <LandingPage /> },
   { path: 'onboarding/:track/:step?', element: <OnboardingPage /> },
   { path: 'auth/sign-in', element: <SignInPage /> },
   { path: 'auth/forgot-password', element: <SignInPage reset /> },

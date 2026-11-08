@@ -1,0 +1,82 @@
+/*
+ * Marketing home page (`/`). Light-first like onboarding, built only from the
+ * brand tokens in index.css.
+ */
+.home { background: white; color: var(--color-ink); color-scheme: light; overflow-x: clip; }
+.home :focus-visible { outline-color: var(--color-brand); }
+
+.home-hero-bg {
+  background: radial-gradient(60% 45% at 50% 0%, color-mix(in srgb, var(--color-brand) 6%, transparent), transparent 70%), white;
+}
+
+/* Bright brand panel, shared with the auth brand artwork. */
+.home-brand-surface {
+  background:
+    radial-gradient(45% 40% at 0% 0%, color-mix(in srgb, var(--color-cyan-soft) 60%, transparent) 0%, transparent 75%),
+    linear-gradient(155deg, var(--color-brand) 0%, var(--color-brand-strong) 65%, var(--color-navy) 125%);
+}
+/* Needs a positioned parent: pair with `relative` or `sticky`. */
+.home-grain::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .22; mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* Hero side chains */
+@keyframes home-chain-drift { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-30px); } }
+@keyframes home-chain-sheen { from { transform: translateX(-320px); } to { transform: translateX(320px); } }
+.home-chain-drift { animation: home-chain-drift 14s ease-in-out infinite; }
+.home-chain-sheen { animation: home-chain-sheen 8s ease-in-out infinite alternate; }
+.home-chain-alt { animation-delay: -6s; animation-direction: alternate-reverse; }
+
+/* Cursor spotlight: reveals the brand chain pattern around the pointer. */
+.home-spotlight { --mx: 50%; --my: 40%; opacity: 0; transition: opacity .6s ease; }
+.home-spotlight.is-on { opacity: 1; }
+.home-spotlight-pattern {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 129.4 170'><path fill='%230F35DB' transform='translate(-99.3 20)' d='M229 43.0009L207.275 43.0459L207.074 43.2463C195.28 43.3515 185.747 52.8593 185.724 64.5738V64.6224C185.724 76.4312 195.374 85.9985 207.275 85.9985C207.93 85.9985 208.576 85.9631 209.221 85.9049L228.916 85.9985V128.999H204.459L204.165 128.905C188.796 128.124 174.844 122.032 164.115 112.452C153.399 122.032 139.435 128.124 124.065 128.905L123.771 128.999L99.3818 128.848V85.8596L119.009 85.9178C119.642 85.976 120.302 86.0114 120.959 86.0114C132.858 86.0104 142.506 76.4405 142.506 64.632V64.5867C142.482 52.8603 132.95 43.3611 121.155 43.2559L120.959 43.0591L99.301 43.1494V0.164729H121.343L121.379 0.174419L121.391 0.164729C137.817 0.340065 152.779 6.57103 164.128 16.699C175.478 6.57066 190.437 0.339767 206.864 0.164729L206.887 0.151809L229 0V43.0009Z'/></svg>");
+  background-size: 84px auto;
+  opacity: .07;
+  -webkit-mask-image: radial-gradient(240px circle at var(--mx) var(--my), #000 0%, rgba(0,0,0,.6) 35%, transparent 75%);
+          mask-image: radial-gradient(240px circle at var(--mx) var(--my), #000 0%, rgba(0,0,0,.6) 35%, transparent 75%);
+}
+.home-spotlight-glow { background: radial-gradient(320px circle at var(--mx) var(--my), color-mix(in srgb, var(--color-brand) 6%, transparent), transparent 70%); }
+
+/* Hero intro: staggered rise on first paint. */
+@keyframes home-rise { from { opacity: 0; transform: translateY(var(--rise, 16px)); } }
+@keyframes home-line { from { transform: translateY(115%); } }
+@keyframes home-drop { from { opacity: 0; transform: translateY(-24px); } }
+@keyframes home-chain-in-l { from { opacity: 0; transform: translate(-180px, 100px); } }
+@keyframes home-chain-in-r { from { opacity: 0; transform: translate(180px, -100px); } }
+.home-intro { animation: home-rise .8s cubic-bezier(.22,1,.36,1) both; animation-delay: var(--delay, 0s); }
+.home-intro-line { animation: home-line 1.15s cubic-bezier(.16,1,.3,1) both; animation-delay: var(--delay, 0s); }
+.home-intro-nav { animation: home-drop .8s cubic-bezier(.22,1,.36,1) both; }
+.home-chain-in-l { animation: home-chain-in-l 1.8s cubic-bezier(.33,1,.68,1) .2s both; }
+.home-chain-in-r { animation: home-chain-in-r 1.8s cubic-bezier(.33,1,.68,1) .35s both; }
+
+/* Trust marquee */
+@keyframes home-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.home-marquee { mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+.home-marquee-track { animation: home-marquee 32s linear infinite; }
+.home-marquee:hover .home-marquee-track { animation-play-state: paused; }
+
+/* Students flow */
+@keyframes home-spin { to { transform: rotate(360deg); } }
+@keyframes home-sheen { from { transform: translateX(0); } to { transform: translateX(600%); } }
+.home-match-spin { animation: home-spin 1.2s linear infinite; transform-origin: 50% 50%; }
+.home-match-spin-alt { animation-direction: reverse; animation-duration: 1.6s; }
+.home-match-sheen { animation: home-sheen 2.6s ease-in-out infinite; }
+.home-match-sheen-alt { animation-delay: 1.1s; }
+@keyframes home-draw { to { stroke-dashoffset: 0; } }
+.home-flow [data-draw] { stroke-dasharray: 220; stroke-dashoffset: 220; }
+.home-flow.is-in [data-draw] { animation: home-draw 1.1s ease-out forwards; }
+.home-flow [data-flow-item] { opacity: 0; transform: translateY(14px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1); }
+.home-flow.is-in [data-flow-item] { opacity: 1; transform: none; }
+
+/* FAQ disclosure marker */
+.home summary::-webkit-details-marker { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .home-chain-drift, .home-chain-sheen, .home-marquee-track, .home-match-spin, .home-match-sheen,
+  .home-intro, .home-intro-line, .home-intro-nav, .home-chain-in-l, .home-chain-in-r { animation: none; }
+  .home-flow [data-draw] { stroke-dasharray: none; stroke-dashoffset: 0; }
+  .home-flow [data-flow-item] { opacity: 1; transform: none; transition: none; }
+}
