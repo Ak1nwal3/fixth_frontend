@@ -3,7 +3,7 @@
  * Add new variables to `.env.example` and to `src/vite-env.d.ts`.
  */
 export const env = {
-  apiUrl: import.meta.env.VITE_API_URL ?? '/api',
+  apiUrl: import.meta.env.VITE_API_URL ?? '/api/v1',
   isDev: import.meta.env.DEV,
   isProd: import.meta.env.PROD,
 } as const

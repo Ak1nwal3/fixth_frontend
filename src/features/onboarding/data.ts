@@ -25,8 +25,8 @@ export interface EmailStepContent {
 /** Organisation track — step 1 of 5. */
 export const organizationEmail: EmailStepContent = {
   brand: onboarding.organizationEmailBrand,
-  eyebrow: 'Organization profile · Step 1 of 5',
-  steps: 5,
+  eyebrow: 'Organization profile · Step 1 of 6',
+  steps: 6,
   current: 1,
   title: 'Verify your work email',
   subtitle: 'We’ll send a one-time code to confirm your organization email.',

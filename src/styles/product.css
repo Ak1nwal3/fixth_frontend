@@ -46,6 +46,9 @@
 .p-identity strong,.p-identity h2,.p-file strong { overflow-wrap:anywhere; }
 .p-identity p { margin-top:3px; }
 .p-company-mark { width:46px; height:46px; flex-shrink:0; border:1px solid var(--p-line); border-radius:13px; background:white; color:var(--color-brand); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:600; }
+/* Company logos on placement cards reuse the shared Avatar but keep the
+   letter-mark silhouette (rounded square, brand text fallback). */
+.p-avatar.company-mark { width:46px; height:46px; border-radius:13px; border:1px solid var(--p-line); background:white; font-size:20px; }
 .p-placement-card { display:flex; flex-direction:column; gap:16px; border:1px solid var(--p-line); border-radius:16px; padding:20px; background:white; box-shadow:0 5px 12px #00002e05; }
 .p-placement-card h2 { font-family:var(--font-sans); font-size:16px; }
 .p-placement-card h2 a:hover { color:var(--color-brand); text-decoration:underline; }
@@ -136,6 +139,9 @@ button.p-text-link,a.p-text-link { display:inline-flex; align-items:center; min-
 .p-empty { display:flex; flex-direction:column; align-items:center; text-align:center; gap:16px; padding:36px 12px; }
 .p-empty>svg { color:var(--color-brand); }
 .p-checklist { display:flex; flex-direction:column; gap:14px; padding-left:20px; list-style:disc; color:#626978; }
+.p-timeline { display:flex; flex-direction:column; gap:14px; margin:0; padding:0; list-style:none; }
+.p-timeline li { display:flex; flex-direction:column; gap:4px; padding-left:14px; border-left:2px solid var(--p-line); }
+.p-timeline small { color:#626978; }
 .p-dropzone { display:flex; flex-direction:column; align-items:center; gap:16px; padding:28px 16px; border:1px dashed #aebcf5; border-radius:12px; text-align:center; }
 .p-dropzone>svg { color:var(--color-brand); }
 .p-dropzone label { width:100%; }
@@ -225,6 +231,7 @@ button.p-text-link,a.p-text-link { display:inline-flex; align-items:center; min-
   .p-filters>.p-search { flex-basis:100%; }
   .p-tags { gap:6px; }
   .p-company-mark { width:38px; height:38px; }
+  .p-avatar.company-mark { width:38px; height:38px; }
   .p-identity { gap:10px; }
   .p-dialog-content { padding:20px; }
   .workspace-grid { grid-template-columns:1fr; }
@@ -256,6 +263,8 @@ button.p-text-link,a.p-text-link { display:inline-flex; align-items:center; min-
 .p-header>div:first-child { flex:1; }
 .p-header-user { max-width:240px; min-width:0; flex-shrink:1; }
 .p-header-user>span:last-child { min-width:0; max-width:160px; overflow-wrap:anywhere; }
+a.p-header-user { padding:4px 8px; margin:-4px -8px; border-radius:12px; cursor:pointer; }
+a.p-header-user:hover { background:#00002e14; }
 .p-dialog h2 { min-width:0; flex:1; overflow-wrap:anywhere; }
 @media(max-width:1000px) { .p-header-user { min-width:36px; max-width:36px; } }
 @media(max-width:1000px) { .details .p-apply-panel:has(.p-callout) { position:static; } }
