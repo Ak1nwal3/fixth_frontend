@@ -473,7 +473,7 @@ Content-Type: application/json
 
 The response is intentionally generic so it cannot be used to enumerate accounts. Existing accounts receive the same response.
 
-In production, delivery is queued to a Celery worker and sent through Resend, so `202` means the request was accepted, not that the inbox has already received the message. Keep the resend button disabled for `resend_after` seconds and do not retry automatically.
+In production, delivery is queued to a Celery worker and sent through SendByte SMTP, so `202` means the request was accepted, not that the inbox has already received the message. Keep the resend button disabled for `resend_after` seconds and do not retry automatically.
 
 Errors: `400` invalid email/track, `429`.
 

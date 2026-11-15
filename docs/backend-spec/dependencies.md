@@ -61,7 +61,7 @@ Sorting: `sort=match` (computed descending) and `sort=title`; elsewhere `orderin
 ## Email / OTP
 
 - Dev: `EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend`.
-- Prod: SMTP/SES/SendGrid (optionally `django-anymail`).
+- Prod: SendByte SMTP via Django's standard SMTP settings.
 - OTP rules: 6 digits, 10-minute TTL, max 5 attempts, 60-second resend cooldown, hashed code, one active code per email/purpose.
 - Password reset: always return `202` to avoid account enumeration; reset links point at `FRONTEND_URL`.
 - Domain checks are implied by evidence labels (“Institutional email”, “Company email domain”, `AdminPages.tsx:29`) but no validation exists in code. Optional DNS/MX or allow-list check.
