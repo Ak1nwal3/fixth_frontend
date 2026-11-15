@@ -1,10 +1,16 @@
-﻿import { Field, ValidatedForm } from './components/Form'
+import { Field, ValidatedForm } from './components/Form'
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { FileText, ShieldCheck } from 'lucide-react';
 import { useProduct } from './useProduct';
 import { initials, dateLabel } from './data';
 import { Badge, Panel, Metrics, Tabs, Empty, Modal, FilePreview } from './components/ui';
+import ProductLayout from './ProductLayout';
+import { ProductProvider } from './store';
+/** The sample-data store is only needed by the admin preview, so it lives here rather than around the whole app. */
+export function AdminWorkspace() {
+    return <ProductProvider><ProductLayout role="admin"/></ProductProvider>;
+}
 export function VerificationQueuePage() {
     const { state } = useProduct();
     const [type, setType] = useState('Students');

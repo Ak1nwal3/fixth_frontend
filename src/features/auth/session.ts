@@ -66,11 +66,15 @@ export function emitSessionExpired(): void {
   listeners.forEach(listener => listener())
 }
 
+/** Same key in every tab, so `storage` events let tabs follow each other. */
+export const SESSION_STORAGE_KEY = STORAGE_KEY
+
 let refreshing: Promise<boolean> | null = null
 
 /**
- * Rotate the stored token pair once. Concurrent calls share a single request
- * so parallel 401s do not race the single-use refresh token.
+ * Rotate the stored token pair once. Concurrent calls in this tab share a
+ * single request, and a Web Lock serializes refreshes across tabs, so parallel
+ * 401s never race the single-use refresh token.
  */
 export function refreshSession(): Promise<boolean> {
   refreshing ??= performRefresh().finally(() => {
@@ -80,22 +84,45 @@ export function refreshSession(): Promise<boolean> {
 }
 
 async function performRefresh(): Promise<boolean> {
+  const seen = getSession()
+  if (!seen) return false
+  const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined
+  if (locks?.request) {
+    return locks.request('fixth-auth-refresh', () => rotate(seen.refresh))
+  }
+  return rotate(seen.refresh)
+}
+
+/** True when another tab has already stored a newer token pair. */
+function rotatedElsewhere(staleRefresh: string): boolean {
+  const current = getSession()
+  return !!current && current.refresh !== staleRefresh
+}
+
+async function rotate(staleRefresh: string): Promise<boolean> {
   const session = getSession()
   if (!session) return false
+  // Another tab refreshed while this one waited for the lock: reuse its tokens.
+  if (session.refresh !== staleRefresh) return true
   try {
     const response = await fetch(`${env.apiUrl}${roleAuthPath(session.role, 'refresh')}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh: session.refresh }),
+      signal: AbortSignal.timeout(60_000),
     })
-    if (!response.ok) return false
+    // A rejected token may have been rotated by a tab without Web Locks.
+    if (!response.ok) return rotatedElsewhere(staleRefresh)
     const tokens = (await response.json()) as { access?: string; refresh?: string }
     if (typeof tokens.access !== 'string') return false
     // Refreshing rotates and blacklists the old refresh token; store the new
     // pair atomically.
     setSession({ ...session, access: tokens.access, refresh: tokens.refresh ?? session.refresh })
     return true
-  } catch {
-    return false
+  } catch (error) {
+    if (rotatedElsewhere(staleRefresh)) return true
+    // Network failure or timeout: the session may still be valid, so surface a
+    // connection error to the caller instead of signing the user out.
+    throw error
   }
 }

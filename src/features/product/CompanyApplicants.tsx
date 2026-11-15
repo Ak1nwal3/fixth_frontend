@@ -43,8 +43,17 @@ function errorText(error: unknown, fallback: string) {
   return 'Could not reach the server. Check your connection and try again.'
 }
 
+/**
+ * `/company/applicants` and `/company/placements/:id/applicants` render this
+ * page in the same outlet slot; keying by scope resets filters, results, and
+ * discipline facets instead of carrying them across placements.
+ */
 export function ApplicantsPage() {
   const { id } = useParams()
+  return <Applicants key={id ?? 'all'} id={id} />
+}
+
+function Applicants({ id }: { id?: string }) {
   const location = useLocation()
   const scoped = Boolean(id)
   const [placement, setPlacement] = useState<StudentPlacement | null>(null)
@@ -62,6 +71,8 @@ export function ApplicantsPage() {
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState('')
+  const [moreError, setMoreError] = useState('')
+  const generation = useRef(0)
   const [attempt, setAttempt] = useState(0)
   const [metrics, setMetrics] = useState<ApplicantMetrics>(blankMetrics)
   const [metricsLoading, setMetricsLoading] = useState(true)
@@ -116,8 +127,11 @@ export function ApplicantsPage() {
       return
     }
     let live = true
+    generation.current += 1
     setLoading(true)
     setError('')
+    setMoreError('')
+    setLoadingMore(false)
     fetchPage(1)
       .then(result => {
         if (!live) return
@@ -181,9 +195,12 @@ export function ApplicantsPage() {
 
   const loadMore = () => {
     const nextPage = page + 1
+    const requestGeneration = generation.current
     setLoadingMore(true)
+    setMoreError('')
     fetchPage(nextPage)
       .then(result => {
+        if (requestGeneration !== generation.current) return
         result.results.forEach(application => {
           if (application.student.discipline) facets.current.add(application.student.discipline)
         })
@@ -192,8 +209,12 @@ export function ApplicantsPage() {
         setPage(nextPage)
         setCount(result.count)
       })
-      .catch(() => setError('More applicants could not be loaded. Try again.'))
-      .finally(() => setLoadingMore(false))
+      .catch(() => {
+        if (requestGeneration === generation.current) setMoreError('More applicants could not be loaded. Try again.')
+      })
+      .finally(() => {
+        if (requestGeneration === generation.current) setLoadingMore(false)
+      })
   }
 
   const disciplineOptions = ['All disciplines', ...facets.current]
@@ -368,6 +389,7 @@ export function ApplicantsPage() {
                   </tbody>
                 </table>
               </div>
+              {moreError && <p role="alert" className="p-error">{moreError}</p>}
               {hasMore && (
                 <button
                   type="button"
@@ -375,7 +397,7 @@ export function ApplicantsPage() {
                   disabled={loadingMore}
                   onClick={loadMore}
                 >
-                  {loadingMore ? 'Loading…' : 'Load more applicants'}
+                  {loadingMore ? 'Loading…' : moreError ? 'Try loading more again' : 'Load more applicants'}
                 </button>
               )}
             </>
@@ -394,8 +416,13 @@ export function ApplicantsPage() {
   )
 }
 
+/** Keyed by application so contact details and notices never leak to the next applicant. */
 export function ApplicantReviewPage() {
   const { applicationId } = useParams()
+  return <ApplicantReview key={applicationId} applicationId={applicationId} />
+}
+
+function ApplicantReview({ applicationId }: { applicationId?: string }) {
   const location = useLocation()
   const backTo =
     (location.state as { from?: string } | null)?.from || '/company/applicants'
@@ -415,12 +442,17 @@ export function ApplicantReviewPage() {
   const [contact, setContact] = useState<ApplicantContact | null>(null)
   const [contactError, setContactError] = useState('')
 
-  useEffect(() => {
-    if (!applicationId) return
-    let live = true
+  const retry = () => {
     setLoading(true)
     setError('')
     setNotFound(false)
+    setAttempt(value => value + 1)
+  }
+
+  // The page is keyed by application, so this only re-runs on retry.
+  useEffect(() => {
+    if (!applicationId) return
+    let live = true
     getCompanyApplication(applicationId)
       .then(result => {
         if (live) setApplication(result)
@@ -448,6 +480,8 @@ export function ApplicantReviewPage() {
     try {
       const updated = await updateCompanyApplicationStatus(application.id, status, reason)
       setApplication(updated)
+      // Contact details are only available while shortlisted/accepted.
+      if (updated.status !== 'Shortlisted' && updated.status !== 'Accepted') setContact(null)
       setNotice(`${updated.student.fullName} was marked as ${status.toLowerCase()}.`)
       if (status === 'Rejected') {
         setRejectOpen(false)
@@ -499,7 +533,7 @@ export function ApplicantReviewPage() {
       <Panel>
         <Empty title="Application could not be loaded">
           <p>{error || 'Something went wrong.'}</p>
-          <button type="button" className="p-button" onClick={() => setAttempt(value => value + 1)}>
+          <button type="button" className="p-button" onClick={retry}>
             Try again
           </button>
         </Empty>

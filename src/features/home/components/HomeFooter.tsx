@@ -8,11 +8,12 @@ import { footerColumns } from '@/features/home/data'
 
 import { SmartLink } from './shared'
 
+/** Icons render only once a real profile URL is filled in. */
 const socials = [
-  { label: 'X (Twitter)', Icon: XIcon },
-  { label: 'LinkedIn', Icon: LinkedInIcon },
-  { label: 'Instagram', Icon: InstagramIcon },
-]
+  { label: 'X (Twitter)', Icon: XIcon, href: '' },
+  { label: 'LinkedIn', Icon: LinkedInIcon, href: '' },
+  { label: 'Instagram', Icon: InstagramIcon, href: '' },
+].filter(social => social.href)
 
 export default function HomeFooter() {
   const [subscribed, setSubscribed] = useState(false)
@@ -94,8 +95,8 @@ export default function HomeFooter() {
         <div className="relative flex flex-col items-center justify-between gap-3 pt-6 text-[12px] text-white/50 sm:flex-row">
           <p>© 2026 Fixth Technologies · Made in Lagos.</p>
           <div className="flex items-center gap-4">
-            {socials.map(({ label, Icon }) => (
-              <a key={label} href="#" aria-label={label} className="transition hover:text-cyan">
+            {socials.map(({ label, Icon, href }) => (
+              <a key={label} href={href} target="_blank" rel="noreferrer noopener" aria-label={label} className="transition hover:text-cyan">
                 <Icon className="size-4" />
               </a>
             ))}

@@ -13,6 +13,8 @@ export interface ApiDataState<T> {
  */
 export function useApiData<T>(fetcher: () => Promise<T>, deps: readonly unknown[]): ApiDataState<T> {
   const [state, setState] = useState<ApiDataState<T>>({ status: 'loading' })
+  // `deps` is the caller's dependency list, which the linter cannot follow.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     let live = true
     setState({ status: 'loading' })

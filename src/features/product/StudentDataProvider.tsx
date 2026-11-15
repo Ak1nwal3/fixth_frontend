@@ -14,20 +14,20 @@ import { StudentDataContext, type StudentDataValue } from './useStudentData'
 export function StudentDataProvider({ children }: { children: ReactNode }) {
   const { status: authStatus, user } = useAuth()
   const isStudent = authStatus === 'signed-in' && user?.role === 'student'
-  const [profile, setProfile] = useState<StudentProfileData | null>(null)
-  const [status, setStatus] = useState<StudentDataValue['status']>('loading')
-  const [error, setError] = useState('')
+  const [loadedProfile, setProfile] = useState<StudentProfileData | null>(null)
+  const [loadedStatus, setStatus] = useState<StudentDataValue['status']>('loading')
+  const [loadedError, setError] = useState('')
+  // Anonymous visitors on public discovery routes get an empty, ready profile.
+  const profile = isStudent ? loadedProfile : null
+  const status = isStudent ? loadedStatus : 'ready'
+  const error = isStudent ? loadedError : ''
   const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
-    if (!isStudent) {
-      // Public discovery routes may mount the provider for anonymous visitors.
-      setProfile(null)
-      setStatus('ready')
-      setError('')
-      return
-    }
+    if (!isStudent) return
     let live = true
+    // eslint-disable-next-line react/set-state-in-effect -- a new account must not show the previous profile
+    setProfile(null)
     setStatus('loading')
     getStudentProfile()
       .then(data => {

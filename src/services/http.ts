@@ -34,6 +34,14 @@ export interface RequestOptions extends RequestInit {
   auth?: 'required' | 'optional' | 'none'
 }
 
+/**
+ * Requests that never answer (e.g. a cold-starting backend) must not leave
+ * spinners running forever. Render cold starts can take ~50 s, so the limit is
+ * generous; uploads get longer for slow connections.
+ */
+export const REQUEST_TIMEOUT_MS = 60_000
+const UPLOAD_TIMEOUT_MS = 180_000
+
 async function send(path: string, init: RequestOptions, access: string | null): Promise<Response> {
   const headers = new Headers(init.headers)
   if (!(init.body instanceof FormData) && !headers.has('Content-Type')) {
@@ -41,7 +49,8 @@ async function send(path: string, init: RequestOptions, access: string | null): 
   }
   if (access) headers.set('Authorization', `Bearer ${access}`)
   const { auth: _auth, ...rest } = init
-  return fetch(`${env.apiUrl}${path}`, { ...rest, headers })
+  const timeout = init.body instanceof FormData ? UPLOAD_TIMEOUT_MS : REQUEST_TIMEOUT_MS
+  return fetch(`${env.apiUrl}${path}`, { ...rest, headers, signal: rest.signal ?? AbortSignal.timeout(timeout) })
 }
 
 export async function request<T>(path: string, init: RequestOptions = {}): Promise<T> {

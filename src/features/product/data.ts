@@ -1,4 +1,4 @@
-﻿export type PlacementStatus = 'Active' | 'Draft' | 'Closed' | 'Expired' | 'Unpublished'
+export type PlacementStatus = 'Active' | 'Draft' | 'Closed' | 'Expired' | 'Unpublished'
 export interface Placement {
   id: string; slug: string; title: string; company: string; location: string; workStyle: string;
   duration: string; discipline: string; level: number; stipend: string; description: string;
@@ -22,11 +22,11 @@ const common = {
   requirements: 'Foundational skills, curiosity, and a willingness to learn in a collaborative environment.',
 }
 export const initialPlacements: Placement[] = [
-  { ...common, id: 'pl-1', slug: 'google-fe-intern', title: 'Frontend Engineering Intern', company: 'Google', location: 'Lagos', workStyle: 'Hybrid', duration: '6 months', discipline: 'Computer Engineering', match: 92 },
-  { ...common, id: 'pl-2', slug: 'meta-product-design', title: 'Product Design Intern', company: 'Meta', location: 'Remote', workStyle: 'Remote', duration: '4 months', discipline: 'Design', match: 88 },
-  { ...common, id: 'pl-3', slug: 'x-data-analytics', title: 'Data Analytics Intern', company: 'X', location: 'Accra', workStyle: 'On-site', duration: '3 months', discipline: 'Data Science', match: 84 },
-  { ...common, id: 'pl-4', slug: 'microsoft-cloud', title: 'Cloud Engineering Intern', company: 'Microsoft', location: 'Lagos', workStyle: 'Hybrid', duration: '6 months', discipline: 'Computer Engineering', status: 'Closed', match: 80 },
-  { ...common, id: 'pl-5', slug: 'flutterwave-qa', title: 'Software QA Intern', company: 'Flutterwave', location: 'Lagos', workStyle: 'On-site', duration: '3 months', discipline: 'Software Engineering', status: 'Expired', match: 78 },
+  { ...common, id: 'pl-1', slug: 'kestrel-fe-intern', title: 'Frontend Engineering Intern', company: 'Kestrel Systems', location: 'Lagos', workStyle: 'Hybrid', duration: '6 months', discipline: 'Computer Engineering', match: 92 },
+  { ...common, id: 'pl-2', slug: 'lumen-product-design', title: 'Product Design Intern', company: 'Lumen Studio', location: 'Remote', workStyle: 'Remote', duration: '4 months', discipline: 'Design', match: 88 },
+  { ...common, id: 'pl-3', slug: 'delta-data-analytics', title: 'Data Analytics Intern', company: 'Delta Insights', location: 'Accra', workStyle: 'On-site', duration: '3 months', discipline: 'Data Science', match: 84 },
+  { ...common, id: 'pl-4', slug: 'orbit-cloud', title: 'Cloud Engineering Intern', company: 'Orbit Cloudworks', location: 'Lagos', workStyle: 'Hybrid', duration: '6 months', discipline: 'Computer Engineering', status: 'Closed', match: 80 },
+  { ...common, id: 'pl-5', slug: 'harbor-qa', title: 'Software QA Intern', company: 'Harbor Payments', location: 'Lagos', workStyle: 'On-site', duration: '3 months', discipline: 'Software Engineering', status: 'Expired', match: 78 },
   { ...common, id: 'pl-6', slug: 'nova-frontend', title: 'Frontend Engineering Intern', company: 'Nova Labs', location: 'Lagos', workStyle: 'Hybrid', duration: '6 months', discipline: 'Computer Engineering', match: 92 },
   { ...common, id: 'pl-7', slug: 'bright-marketing', title: 'Marketing Intern', company: 'Bright Media', location: 'Lagos', workStyle: 'On-site', duration: '3 months', discipline: 'Marketing', reports: 6, match: 70 },
   { ...common, id: 'pl-8', slug: 'nova-design-draft', title: 'Product Design Intern', company: 'Nova Labs', location: 'Lagos', workStyle: 'Hybrid', duration: '4 months', discipline: 'Design', status: 'Draft', match: 88 },

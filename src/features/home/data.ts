@@ -211,9 +211,7 @@ export const footerColumns: { title: string; links: NavLink[] }[] = [
   {
     title: 'Fixth',
     links: [
-      { label: 'About', href: '#about' },
-      { label: 'Privacy', href: '#privacy' },
-      { label: 'Terms', href: '#terms' },
+      // Add About, Privacy, and Terms here once those pages exist.
       { label: 'Contact', href: routes.contact },
     ],
   },

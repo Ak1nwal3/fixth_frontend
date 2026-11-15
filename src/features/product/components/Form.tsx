@@ -1,4 +1,4 @@
-﻿import { Children, cloneElement, createContext, isValidElement, useContext, useId, useState, type ReactNode, type ReactElement, type FormHTMLAttributes, type LabelHTMLAttributes, type InputHTMLAttributes } from 'react'
+import { Children, cloneElement, createContext, isValidElement, useContext, useId, useState, type ReactNode, type ReactElement, type FormHTMLAttributes, type LabelHTMLAttributes, type InputHTMLAttributes } from 'react'
 const ErrorContext = createContext<Record<string, string>>({})
 export function ValidatedForm({ children, onSubmit, onInvalidCapture, onInputCapture, ...props }: FormHTMLAttributes<HTMLFormElement>) {
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -10,7 +10,12 @@ export function ValidatedForm({ children, onSubmit, onInvalidCapture, onInputCap
     }) as HTMLInputElement | HTMLTextAreaElement | undefined
     if (invalid) {
       event.preventDefault()
-      invalid.setCustomValidity('Enter a complete value, rather than spaces.')
+      const trimmed = invalid.value.trim()
+      invalid.setCustomValidity(
+        !trimmed
+          ? 'Enter a value, not just spaces.'
+          : `Enter at least ${invalid.minLength} characters (currently ${trimmed.length}).`,
+      )
       invalid.reportValidity()
       invalid.focus()
       return

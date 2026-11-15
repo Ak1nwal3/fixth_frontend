@@ -17,5 +17,6 @@ export async function downloadDocument(
   window.document.body.append(anchor)
   anchor.click()
   anchor.remove()
-  URL.revokeObjectURL(url)
+  // Revoking synchronously can cancel the download in Firefox and Safari.
+  setTimeout(() => URL.revokeObjectURL(url), 30_000)
 }

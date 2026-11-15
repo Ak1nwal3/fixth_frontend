@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { Clock3, GraduationCap, MapPin, Plus } from 'lucide-react'
 import { useDebounced } from '@/hooks/useDebounced'
@@ -49,8 +49,15 @@ function errorText(error: unknown, fallback: string) {
 
 export function CompanyPlacementsPage() {
   const location = useLocation()
-  const savedNotice = (location.state as { saved?: string } | null)?.saved
-  const [notice, setNotice] = useState(savedNotice ? `${savedNotice} was saved.` : '')
+  const navState = location.state as { saved?: string; closed?: boolean } | null
+  const savedNotice = navState?.saved
+  const [notice, setNotice] = useState(
+    savedNotice
+      ? navState?.closed
+        ? `${savedNotice} is now closed and no longer accepting applications.`
+        : `${savedNotice} was saved.`
+      : '',
+  )
   const [tab, setTab] = useState('All')
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<'newest' | 'oldest' | 'title'>('newest')
@@ -62,6 +69,8 @@ export function CompanyPlacementsPage() {
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState('')
+  const [moreError, setMoreError] = useState('')
+  const generation = useRef(0)
   const [attempt, setAttempt] = useState(0)
   const [refreshKey, setRefreshKey] = useState(0)
   const [metrics, setMetrics] = useState<CompanyMetrics>(blankMetrics)
@@ -97,8 +106,11 @@ export function CompanyPlacementsPage() {
 
   useEffect(() => {
     let live = true
+    generation.current += 1
     setLoading(true)
     setError('')
+    setMoreError('')
+    setLoadingMore(false)
     listCompanyPlacements({
       status: tab,
       q: debouncedQuery || undefined,
@@ -131,7 +143,9 @@ export function CompanyPlacementsPage() {
 
   const loadMore = () => {
     const nextPage = page + 1
+    const requestGeneration = generation.current
     setLoadingMore(true)
+    setMoreError('')
     listCompanyPlacements({
       status: tab,
       q: debouncedQuery || undefined,
@@ -140,13 +154,18 @@ export function CompanyPlacementsPage() {
       pageSize: PAGE_SIZE,
     })
       .then(result => {
+        if (requestGeneration !== generation.current) return
         setItems(current => [...current, ...result.results])
         setHasMore(!!result.next)
         setPage(nextPage)
         setCount(result.count)
       })
-      .catch(() => setError('More placements could not be loaded. Try again.'))
-      .finally(() => setLoadingMore(false))
+      .catch(() => {
+        if (requestGeneration === generation.current) setMoreError('More placements could not be loaded. Try again.')
+      })
+      .finally(() => {
+        if (requestGeneration === generation.current) setLoadingMore(false)
+      })
   }
 
   const refresh = () => {
@@ -318,6 +337,7 @@ export function CompanyPlacementsPage() {
                   </tbody>
                 </table>
               </div>
+              {moreError && <p role="alert" className="p-error">{moreError}</p>}
               {hasMore && (
                 <button
                   type="button"
@@ -325,7 +345,7 @@ export function CompanyPlacementsPage() {
                   disabled={loadingMore}
                   onClick={loadMore}
                 >
-                  {loadingMore ? 'Loading…' : 'Load more placements'}
+                  {loadingMore ? 'Loading…' : moreError ? 'Try loading more again' : 'Load more placements'}
                 </button>
               )}
             </>
@@ -418,8 +438,13 @@ function fieldErrorsFrom(body: unknown): Record<string, string> {
   return result
 }
 
+/** Keyed by placement so switching between editors never mixes form state. */
 export function PlacementEditorPage() {
   const { id } = useParams()
+  return <PlacementEditor key={id ?? 'new'} id={id} />
+}
+
+function PlacementEditor({ id }: { id?: string }) {
   const navigate = useNavigate()
   const editing = Boolean(id)
   const [form, setForm] = useState<CompanyPlacementInput>(blankForm)
@@ -433,14 +458,8 @@ export function PlacementEditorPage() {
   const [preview, setPreview] = useState(false)
 
   useEffect(() => {
-    if (!id) {
-      setLoading(false)
-      return
-    }
+    if (!id) return
     let live = true
-    setLoading(true)
-    setLoadError('')
-    setNotFound(false)
     getCompanyPlacement(id)
       .then(placement => {
         if (!live) return
@@ -515,7 +534,9 @@ export function PlacementEditorPage() {
   }
 
   const save = async (target?: 'Draft' | 'Active' | 'Closed') => {
-    const publish = target === 'Active'
+    // A live listing must stay complete, so edits to an Active placement use
+    // the same rules as publishing.
+    const publish = target === 'Active' || (editing && serverStatus === 'Active' && target !== 'Closed')
     if (!validate(publish)) {
       setMessage('Review the highlighted fields and try again.')
       return
@@ -534,14 +555,20 @@ export function PlacementEditorPage() {
       let result: StudentPlacement
       if (editing && id) {
         // Save edits first, then use the dedicated publish endpoint when the
-        // action is a publish (it transitions Draft/Closed → Active).
+        // action is a publish (it transitions Draft/Closed → Active). Closing
+        // is a plain status PATCH, the same call the listings table uses.
         const { status: _status, ...editable } = payload
-        result = await updateCompanyPlacement(id, editable)
+        result = await updateCompanyPlacement(
+          id,
+          target === 'Closed' ? { ...editable, status: 'Closed' } : editable,
+        )
         if (target === 'Active') result = await publishCompanyPlacement(id)
       } else {
         result = await createCompanyPlacement({ ...payload, status: target || 'Draft' })
       }
-      navigate('/company/placements', { state: { saved: result.title } })
+      navigate('/company/placements', {
+        state: { saved: result.title, closed: target === 'Closed' && result.status === 'Closed' },
+      })
     } catch (error) {
       if (error instanceof ApiError && error.status === 400) {
         const mapped = fieldErrorsFrom(error.body)
@@ -590,6 +617,7 @@ export function PlacementEditorPage() {
   const canSaveDraft = !editing || serverStatus === 'Draft'
   const canPublish = !editing || serverStatus === 'Draft' || serverStatus === 'Closed'
   const canClose = editing && serverStatus === 'Active'
+  const requireComplete = canPublish || serverStatus === 'Active'
   const primaryTarget: 'Active' | undefined = canPublish ? 'Active' : undefined
   const primaryLabel = canPublish ? (serverStatus === 'Closed' ? 'Reopen placement' : 'Publish placement') : 'Save changes'
 
@@ -645,7 +673,7 @@ export function PlacementEditorPage() {
               </span>
               <textarea
                 name={key}
-                required={canPublish}
+                required={requireComplete}
                 value={form[key]}
                 onChange={event => update(key, event.target.value)}
                 aria-invalid={!!fieldErrors[key] || undefined}
@@ -686,7 +714,7 @@ export function PlacementEditorPage() {
               <span>Location *</span>
               <input
                 name="location"
-                required={canPublish}
+                required={requireComplete}
                 value={form.location}
                 onChange={event => update('location', event.target.value)}
                 aria-invalid={!!fieldErrors.location || undefined}
@@ -709,7 +737,7 @@ export function PlacementEditorPage() {
               <span>Duration *</span>
               <input
                 name="duration"
-                required={canPublish}
+                required={requireComplete}
                 value={form.duration}
                 placeholder="e.g. 6 months"
                 onChange={event => update('duration', event.target.value)}

@@ -7,9 +7,7 @@
  */
 import midSectionIllustration from './images/mid-section.svg'
 import internshipsMockupIllustration from './images/internships-mockup.png'
-import onboardingBrandPanel from './images/onboarding/brand-panel.png'
-import onboardingOrganizationEmailBrand from './images/onboarding/organization-email-brand.png'
-import onboardingStudentEmailBrand from './images/onboarding/student-email-brand.png'
+import onboardingBrandPanel from './images/onboarding/brand-panel.webp'
 import avatarJohnDoe from './placeholders/avatar-john-doe.svg'
 import avatarKateEting from './placeholders/avatar-kate-eting.svg'
 import avatarMatthewEjeo from './placeholders/avatar-matthew-ejeo.svg'
@@ -59,14 +57,3 @@ export const companyLogos = {
  * serves every page of both the student and organization tracks.
  */
 export const brandPanel = onboardingBrandPanel
-
-/**
- * Onboarding & auth brand-panel artwork.
- *
- * Each reference screen exports as one 1440×960 image; the left 520×960 panel
- * is cropped out and used as the fixed brand panel beside the form.
- */
-export const onboarding = {
-  organizationEmailBrand: onboardingOrganizationEmailBrand,
-  studentEmailBrand: onboardingStudentEmailBrand,
-} as const

@@ -135,7 +135,10 @@ export async function getCompanySummary(): Promise<CompanySummary> {
 
 /** Public company profile by slug (no private fields; 404 when not exposed). */
 export async function getPublicCompany(slug: string): Promise<PublicCompany> {
-  const company = await request<ApiPublicCompany>(`/companies/${encodeURIComponent(slug)}/`)
+  // Optional auth: an expired session must not sign the visitor out of a public page.
+  const company = await request<ApiPublicCompany>(`/companies/${encodeURIComponent(slug)}/`, {
+    auth: 'optional',
+  })
   return {
     id: company.id,
     name: company.name,

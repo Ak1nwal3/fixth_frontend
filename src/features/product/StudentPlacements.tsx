@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { Bookmark, MapPin, Clock3, GraduationCap, ArrowRight, FileText, ShieldCheck } from 'lucide-react'
 import { useAuth } from '@/features/auth/useAuth'
@@ -27,16 +27,30 @@ import { downloadDocument } from '@/services/documents'
 import type { ApiApplicationStatus } from '@/services/types'
 
 function PlacementCard({ placement, saving, signedIn, onToggleSave }: { placement: StudentPlacement; saving: boolean; signedIn: boolean; onToggleSave: (placement: StudentPlacement) => void }) {
-  return <article className="p-placement-card"><div className="p-between"><div className="p-identity"><Avatar className="company-mark" src={placement.companyLogoUrl} fallback={placement.company[0]} /><div><h2><Link to={`/p/${placement.slug}`}>{placement.title}</Link></h2><p>{placement.company} {placement.companyVerified && <ShieldCheck aria-label="Verified company" size={14} className="p-inline-success" />}</p></div></div><button className="p-icon" type="button" disabled={!signedIn || saving} title={signedIn ? undefined : 'Sign in to save placements'} aria-label={`${placement.isSaved ? 'Remove from saved' : 'Save'} ${placement.title}`} aria-pressed={placement.isSaved} onClick={() => onToggleSave(placement)}><Bookmark size={18} aria-hidden fill={placement.isSaved ? 'currentColor' : 'none'} /></button></div><div className="p-tags"><span><MapPin aria-hidden size={13} />{placement.location} · {placement.workStyle}</span><span><Clock3 aria-hidden size={13} />{placement.duration}</span><span><GraduationCap aria-hidden size={13} />{placement.discipline}</span></div><div className="p-between p-card-foot"><span>Verified placement</span>{placement.match != null && <strong>{placement.match}% match</strong>}</div></article>
+  return <article className="p-placement-card"><div className="p-between"><div className="p-identity"><Avatar className="company-mark" src={placement.companyLogoUrl} fallback={placement.company[0]} /><div><h2><Link to={`/p/${placement.slug}`}>{placement.title}</Link></h2><p>{placement.company} {placement.companyVerified && <ShieldCheck aria-label="Verified company" size={14} className="p-inline-success" />}</p></div></div><button className="p-icon" type="button" disabled={!signedIn || saving} title={signedIn ? undefined : 'Sign in as a student to save placements'} aria-label={`${placement.isSaved ? 'Remove from saved' : 'Save'} ${placement.title}`} aria-pressed={placement.isSaved} onClick={() => onToggleSave(placement)}><Bookmark size={18} aria-hidden fill={placement.isSaved ? 'currentColor' : 'none'} /></button></div><div className="p-tags"><span><MapPin aria-hidden size={13} />{placement.location} · {placement.workStyle}</span><span><Clock3 aria-hidden size={13} />{placement.duration}</span><span><GraduationCap aria-hidden size={13} />{placement.discipline}</span></div><div className="p-between p-card-foot"><span>{placement.companyVerified ? 'Verified company' : placement.placementType || 'Placement'}</span>{placement.match != null && <strong>{placement.match}% match</strong>}</div></article>
+}
+
+/** Case-insensitive match of a URL value to a known option, allowing shorthand prefixes. */
+function resolveOption(value: string, options: string[]): string | null {
+  const wanted = value.trim().toLowerCase()
+  if (!wanted || wanted.startsWith('all ') || !options.length) return null
+  return (
+    options.find(option => option.toLowerCase() === wanted) ??
+    options.find(option => option.toLowerCase().startsWith(`${wanted} `)) ??
+    options.find(option => option.toLowerCase().split(/[\s/]+/).includes(wanted)) ??
+    null
+  )
 }
 
 export function DiscoverPage({ savedOnly = false }: { savedOnly?: boolean }) {
   const [params] = useSearchParams()
   const { user } = useAuth()
+  const isStudent = user?.role === 'student'
   const [query, setQuery] = useState(params.get('q') || '')
   const [workStyles, setWorkStyles] = useState<string[]>((params.get('styles') || '').split(',').filter(Boolean))
-  const [discipline, setDiscipline] = useState('All disciplines')
-  const [location, setLocation] = useState('All locations')
+  // Home page search and "Popular" links pass discipline/location in the URL.
+  const [discipline, setDiscipline] = useState(params.get('discipline')?.trim() || 'All disciplines')
+  const [location, setLocation] = useState(params.get('location')?.trim() || 'All locations')
   const [duration, setDuration] = useState('Any duration')
   const [sort, setSort] = useState('Best match')
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -49,7 +63,10 @@ export function DiscoverPage({ savedOnly = false }: { savedOnly?: boolean }) {
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState('')
+  const [moreError, setMoreError] = useState('')
   const [attempt, setAttempt] = useState(0)
+  /** Bumped on every fresh query so late "load more" pages from an old query are dropped. */
+  const generation = useRef(0)
   const [facetState, setFacetState] = useState<{ locations: string[]; durations: string[] }>({ locations: [], durations: [] })
   const [saveNotice, setSaveNotice] = useState('')
   const [savingId, setSavingId] = useState<string | null>(null)
@@ -66,6 +83,21 @@ export function DiscoverPage({ savedOnly = false }: { savedOnly?: boolean }) {
     }
   }, [])
 
+  const disciplines = useApiData(() => listDisciplines(), [])
+
+  // URL values can be shorthand ("Mechanical") for the canonical API names
+  // ("Mechanical Engineering"); snap them to a known option once loaded.
+  useEffect(() => {
+    const resolved = resolveOption(discipline, disciplines.data?.map(d => d.name) ?? [])
+    if (resolved && resolved !== discipline) setDiscipline(resolved)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [disciplines.data])
+  useEffect(() => {
+    const resolved = resolveOption(location, facetState.locations)
+    if (resolved && resolved !== location) setLocation(resolved)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [facetState.locations])
+
   const listParams = {
     q: debouncedQuery || undefined,
     discipline: discipline === 'All disciplines' ? undefined : discipline,
@@ -75,18 +107,29 @@ export function DiscoverPage({ savedOnly = false }: { savedOnly?: boolean }) {
     sort: (sort === 'Best match' ? 'match' : 'title') as 'match' | 'title',
   }
   const filterKey = [debouncedQuery, discipline, location, duration, workStyles.join(','), sort, savedOnly, attempt]
-
-  useEffect(() => {
-    let live = true
-    setLoading(true)
-    setError('')
-    const request = savedOnly
-      ? listSavedPlacements({ page: 1 }).then(savedList => ({
+  // The saved-placements list has no filters but keeps closed listings; the
+  // discovery endpoint with `saved=true` filters, but only open listings.
+  const savedFiltered = savedOnly && Boolean(
+    listParams.q || listParams.discipline || listParams.location || listParams.duration || workStyles.length || sort !== 'Best match',
+  )
+  const fetchPage = (pageNumber: number) =>
+    savedOnly && !savedFiltered
+      ? listSavedPlacements({ page: pageNumber }).then(savedList => ({
           ...savedList,
           results: savedList.results.map(entry => ({ ...entry.placement, isSaved: true as const })),
         }))
-      : listPlacements({ ...listParams, page: 1 })
-    request
+      : listPlacements({ ...listParams, saved: savedOnly || undefined, page: pageNumber })
+
+  // Re-runs on every filter change, including the debounced search text.
+  // eslint-disable-next-line react-hooks/exhaustive-deps, react/set-state-in-effect
+  useEffect(() => {
+    let live = true
+    generation.current += 1
+    setLoading(true)
+    setError('')
+    setMoreError('')
+    setLoadingMore(false)
+    fetchPage(1)
       .then(result => {
         if (!live) return
         setItems(result.results)
@@ -118,25 +161,26 @@ export function DiscoverPage({ savedOnly = false }: { savedOnly?: boolean }) {
 
   const loadMore = () => {
     const nextPage = page + 1
+    const requestGeneration = generation.current
     setLoadingMore(true)
-    const request = savedOnly
-      ? listSavedPlacements({ page: nextPage }).then(savedList => ({
-          ...savedList,
-          results: savedList.results.map(entry => ({ ...entry.placement, isSaved: true as const })),
-        }))
-      : listPlacements({ ...listParams, page: nextPage })
-    request
+    setMoreError('')
+    fetchPage(nextPage)
       .then(result => {
+        if (requestGeneration !== generation.current) return
         setItems(current => [...current, ...result.results])
         setHasMore(!!result.next)
         setPage(nextPage)
       })
-      .catch(() => setError('More placements could not be loaded. Try again.'))
-      .finally(() => setLoadingMore(false))
+      .catch(() => {
+        if (requestGeneration === generation.current) setMoreError('More placements could not be loaded. Try again.')
+      })
+      .finally(() => {
+        if (requestGeneration === generation.current) setLoadingMore(false)
+      })
   }
 
   const toggleSave = async (placement: StudentPlacement) => {
-    if (!user || savingId) return
+    if (!isStudent || savingId) return
     setSavingId(placement.id)
     try {
       if (placement.isSaved) {
@@ -171,9 +215,8 @@ export function DiscoverPage({ savedOnly = false }: { savedOnly?: boolean }) {
     }
   }
 
-  const disciplines = useApiData(() => listDisciplines(), [])
-  const disciplineOptions = ['All disciplines', ...new Set([...(disciplines.data?.map(d => d.name) ?? []), ...items.map(p => p.discipline)])]
-  const locationOptions = ['All locations', ...facetState.locations]
+  const disciplineOptions = ['All disciplines', ...new Set([...(disciplines.data?.map(d => d.name) ?? []), ...items.map(p => p.discipline), ...(discipline === 'All disciplines' ? [] : [discipline])])]
+  const locationOptions = ['All locations', ...new Set([...facetState.locations, ...(location === 'All locations' ? [] : [location])])]
   const durationOptions = ['Any duration', ...facetState.durations]
 
   const controls = <>
@@ -188,10 +231,11 @@ export function DiscoverPage({ savedOnly = false }: { savedOnly?: boolean }) {
       {workStyles.length > 0 && <button type="button" className="p-button subtle" onClick={() => setWorkStyles([])}>Clear {workStyles.join(' · ')} filter</button>}
     </div>
     <div className="p-between p-result-count"><p role="status">{loading ? 'Loading placements…' : `${count} ${savedOnly ? 'saved' : 'verified'} placements`}</p><label><span className="p-sr">Sort placements</span><select value={sort} onChange={e => setSort(e.target.value)}><option>Best match</option><option>Title A–Z</option></select></label></div>
+    {savedFiltered && <p className="p-small">Filtered results show saved placements that are still open. Clear the search and filters to see closed ones too.</p>}
     {saveNotice && <p className="p-small" role="status">{saveNotice}</p>}
     {error && <Panel><Empty title="Placements could not be loaded"><p>{error}</p><button type="button" className="p-button" onClick={() => setAttempt(value => value + 1)}>Try again</button></Empty></Panel>}
-    {!error && <div className="p-stack">{loading ? <Panel><p role="status">Loading placements…</p></Panel> : items.length ? <>{items.map(p => <PlacementCard key={p.id} placement={p} saving={savingId === p.id} signedIn={Boolean(user)} onToggleSave={toggleSave} />)}{hasMore && <button type="button" className="p-button secondary" disabled={loadingMore} onClick={loadMore}>{loadingMore ? 'Loading…' : 'Load more placements'}</button>}</> : <Panel><Empty title={savedOnly ? 'No saved placements yet' : 'No matching placements'}><p>{savedOnly ? 'Use the bookmark button on a placement to save it for later. Closed listings stay in this list with their current status.' : 'Try a different role, location, or discipline.'}</p>{!savedOnly && <Link className="p-button" to="/student/discover">Discover placements</Link>}</Empty></Panel>}</div>}
-  </div><aside className="p-stack p-secondary-rail"><Panel><div className="p-between"><h2>Application profile</h2><Badge>One-click apply</Badge></div><p>Your Fixth profile and resume are used for one-click applications. Applications open soon.</p><Link className="p-file" to="/student/resume"><FileText size={20} aria-hidden /><span>Manage your resume<small>Resume preferences →</small></span></Link></Panel><Panel className="tinted"><p className="p-eyebrow">Placement alerts</p><h2>Get notified first</h2><p>Verified roles are matched to your discipline. Keep your profile preferences up to date.</p><Link to="/student/profile/edit" className="p-text-link">Update preferences →</Link></Panel></aside>
+    {!error && <div className="p-stack">{loading ? <Panel><p role="status">Loading placements…</p></Panel> : items.length ? <>{items.map(p => <PlacementCard key={p.id} placement={p} saving={savingId === p.id} signedIn={isStudent} onToggleSave={toggleSave} />)}{moreError && <p role="alert" className="p-error">{moreError}</p>}{hasMore && <button type="button" className="p-button secondary" disabled={loadingMore} onClick={loadMore}>{loadingMore ? 'Loading…' : moreError ? 'Try loading more again' : 'Load more placements'}</button>}</> : <Panel><Empty title={savedOnly ? 'No saved placements yet' : 'No matching placements'}><p>{savedOnly ? 'Use the bookmark button on a placement to save it for later. Closed listings stay in this list with their current status.' : 'Try a different role, location, or discipline.'}</p>{!savedOnly && <Link className="p-button" to="/student/discover">Discover placements</Link>}</Empty></Panel>}</div>}
+  </div><aside className="p-stack p-secondary-rail"><Panel><div className="p-between"><h2>Application profile</h2><Badge>One-click apply</Badge></div><p>Apply in one click: your Fixth profile and active resume are shared with the company.</p><Link className="p-file" to="/student/resume"><FileText size={20} aria-hidden /><span>Manage your resume<small>Resume preferences →</small></span></Link></Panel><Panel className="tinted"><p className="p-eyebrow">Placement alerts</p><h2>Get notified first</h2><p>Verified roles are matched to your discipline. Keep your profile preferences up to date.</p><Link to="/student/profile/edit" className="p-text-link">Update preferences →</Link></Panel></aside>
   {filtersOpen && <Modal title="Filter placements" onClose={() => setFiltersOpen(false)}><div className="p-form">{controls}<button type="button" className="p-button" onClick={() => { setDiscipline('All disciplines'); setLocation('All locations'); setDuration('Any duration'); setWorkStyles([]) }}>Reset filters</button><button type="button" className="p-button" onClick={() => setFiltersOpen(false)}>Show {count} placements</button></div></Modal>}
   </div>
 }
@@ -216,9 +260,15 @@ export function CompanyPanel({ slug }: { slug: string }) {
   )
 }
 
+/** Keyed by placement so apply state never carries over to another listing. */
 export function PlacementDetailPage() {
   const { slug, id } = useParams()
+  return <PlacementDetail key={slug ?? id} slug={slug} id={id} />
+}
+
+function PlacementDetail({ slug, id }: { slug?: string; id?: string }) {
   const { user } = useAuth()
+  const isStudent = user?.role === 'student'
   const [attempt, setAttempt] = useState(0)
   const { status, data: placement, error } = useApiData(
     () => (slug ? getPlacementBySlug(slug) : getPlacementById(id!)),
@@ -258,7 +308,7 @@ export function PlacementDetailPage() {
   }
   const eligible = placement.eligibility.eligible
   const open = placement.status === 'Active'
-  return <><div className="p-breadcrumb"><Link to="/student/discover">← Discover placements</Link><span>{placement.title}</span></div><div className="p-columns details"><Panel className="p-article"><div className="p-identity"><Avatar className="company-mark" src={placement.companyLogoUrl} fallback={placement.company[0]} /><div><h2>{placement.title}</h2><p>{placement.company} {placement.companyVerified && <ShieldCheck className="p-inline-success" size={15} aria-label="Verified company" />}</p></div></div><div className="p-tags"><span><MapPin size={14} aria-hidden />{placement.location} · {placement.workStyle}</span><span><Clock3 size={14} aria-hidden />{placement.duration}</span><span><GraduationCap size={14} aria-hidden />{placement.discipline}</span></div><section><h3>About the role</h3><p>{placement.description}</p></section><section><h3>What you’ll do</h3><p>{placement.responsibilities}</p></section><section><h3>What we’re looking for</h3><p>{placement.requirements}</p><p>{placement.eligibility.required_discipline || placement.discipline} · {placement.eligibility.required_level} level and above</p></section><section><h3>Monthly stipend</h3><p>{placement.stipend || 'Not specified'}</p></section><div className="p-mobile-share"><CopyLink slug={placement.slug} title={placement.title} /></div></Panel><aside><CompanyPanel slug={placement.companySlug} /><Panel className="p-apply-panel"><Badge tone={eligible ? 'success' : 'warning'}>{eligible ? 'You’re eligible' : 'Eligibility requirements'}</Badge><h2>{hasApplied ? 'Application submitted' : open ? (placement.canApply ? 'Applications open' : 'Application requirements') : 'Applications closed'}</h2><p>Your Fixth profile and uploaded resume will be shared. No cover letter required.</p>{!user && <p className="p-callout">Sign in as a student to check your eligibility and apply. <Link to="/auth/student/sign-in" className="p-text-link">Sign in</Link></p>}{user && !eligible && <p className="p-callout warning">{placement.eligibility.reason} <Link to="/student/profile/edit">Review your academic details.</Link></p>}{applyError && <p role="alert" className="p-error">{applyError}</p>}{justApplied && <p className="p-callout">Application submitted. <Link to="/student/applications" className="p-text-link">Track it in your applications</Link></p>}<button className="p-button" type="button" disabled={!user || !placement.canApply || !open || hasApplied || applyBusy} onClick={apply}>{hasApplied ? 'Already applied' : !open ? 'Applications closed' : applyBusy ? 'Submitting.' : 'Apply with Fixth profile'}<ArrowRight size={16} aria-hidden /></button><p className="p-small">{hasApplied ? 'Your application is in. Track review updates in your applications.' : user ? 'By applying, you agree to share your profile and resume with this company.' : 'One-click apply uses your Fixth profile and resume.'}</p><hr /><h3>Share this placement</h3><p className="p-small">{window.location.host}/p/{placement.slug}</p><CopyLink slug={placement.slug} title={placement.title} /></Panel></aside></div></>
+  return <><div className="p-breadcrumb"><Link to="/student/discover">← Discover placements</Link><span>{placement.title}</span></div><div className="p-columns details"><Panel className="p-article"><div className="p-identity"><Avatar className="company-mark" src={placement.companyLogoUrl} fallback={placement.company[0]} /><div><h2>{placement.title}</h2><p>{placement.company} {placement.companyVerified && <ShieldCheck className="p-inline-success" size={15} aria-label="Verified company" />}</p></div></div><div className="p-tags"><span><MapPin size={14} aria-hidden />{placement.location} · {placement.workStyle}</span><span><Clock3 size={14} aria-hidden />{placement.duration}</span><span><GraduationCap size={14} aria-hidden />{placement.discipline}</span></div><section><h3>About the role</h3><p>{placement.description}</p></section><section><h3>What you’ll do</h3><p>{placement.responsibilities}</p></section><section><h3>What we’re looking for</h3><p>{placement.requirements}</p><p>{placement.eligibility.required_discipline || placement.discipline} · {placement.eligibility.required_level} level and above</p></section><section><h3>Monthly stipend</h3><p>{placement.stipend || 'Not specified'}</p></section><div className="p-mobile-share"><CopyLink slug={placement.slug} title={placement.title} /></div></Panel><aside><CompanyPanel slug={placement.companySlug} /><Panel className="p-apply-panel"><Badge tone={eligible ? 'success' : 'warning'}>{eligible ? 'You’re eligible' : 'Eligibility requirements'}</Badge><h2>{hasApplied ? 'Application submitted' : open ? (placement.canApply ? 'Applications open' : 'Application requirements') : 'Applications closed'}</h2><p>Your Fixth profile and uploaded resume will be shared. No cover letter required.</p>{!isStudent && <p className="p-callout">Sign in as a student to check your eligibility and apply. <Link to="/auth/student/sign-in" className="p-text-link">Sign in</Link></p>}{isStudent && !eligible && <p className="p-callout warning">{placement.eligibility.reason} <Link to="/student/profile/edit">Review your academic details.</Link></p>}{applyError && <p role="alert" className="p-error">{applyError}</p>}{justApplied && <p className="p-callout">Application submitted. <Link to="/student/applications" className="p-text-link">Track it in your applications</Link></p>}<button className="p-button" type="button" disabled={!isStudent || !placement.canApply || !open || hasApplied || applyBusy} onClick={apply}>{hasApplied ? 'Already applied' : !open ? 'Applications closed' : applyBusy ? 'Submitting…' : 'Apply with Fixth profile'}<ArrowRight size={16} aria-hidden /></button><p className="p-small">{hasApplied ? 'Your application is in. Track review updates in your applications.' : isStudent ? 'By applying, you agree to share your profile and resume with this company.' : 'One-click apply uses your Fixth profile and resume.'}</p><hr /><h3>Share this placement</h3><p className="p-small">{window.location.host}/p/{placement.slug}</p><CopyLink slug={placement.slug} title={placement.title} /></Panel></aside></div></>
 }
 
 const APPLICATION_STATUSES = ['All', 'Submitted', 'Viewed', 'Shortlisted', 'Accepted', 'Rejected', 'Withdrawn']
@@ -361,13 +411,22 @@ export function ApplicationsPage() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
+  const [moreError, setMoreError] = useState('')
+  const generation = useRef(0)
   const [summary, setSummary] = useState<StudentApplicationSummary | null>(null)
   const [withdrawTarget, setWithdrawTarget] = useState<StudentApplication | null>(null)
 
-  useEffect(() => {
-    let live = true
+  /** Resets list state for a new query; called from the events that start one. */
+  const startQuery = () => {
     setLoading(true)
     setError('')
+    setMoreError('')
+    setLoadingMore(false)
+  }
+
+  useEffect(() => {
+    let live = true
+    generation.current += 1
     const listParams = { status: statusFilter }
     listStudentApplications({ ...listParams, page: 1 })
       .then(result => {
@@ -407,18 +466,28 @@ export function ApplicationsPage() {
 
   const loadMore = () => {
     const nextPage = page + 1
+    const requestGeneration = generation.current
     setLoadingMore(true)
+    setMoreError('')
     listStudentApplications({ status: statusFilter, page: nextPage })
       .then(result => {
+        if (requestGeneration !== generation.current) return
         setItems(current => [...current, ...result.results])
         setHasMore(!!result.next)
         setPage(nextPage)
       })
-      .catch(() => setError('More applications could not be loaded. Try again.'))
-      .finally(() => setLoadingMore(false))
+      .catch(() => {
+        if (requestGeneration === generation.current) setMoreError('More applications could not be loaded. Try again.')
+      })
+      .finally(() => {
+        if (requestGeneration === generation.current) setLoadingMore(false)
+      })
   }
 
-  const refresh = () => setAttempt(value => value + 1)
+  const refresh = () => {
+    startQuery()
+    setAttempt(value => value + 1)
+  }
 
   return (
     <>
@@ -445,16 +514,17 @@ export function ApplicationsPage() {
         </Panel>
       ) : (
         <>
-          <Tabs items={APPLICATION_STATUSES} value={statusFilter} onChange={setStatusFilter} label="Filter applications by status" />
+          <Tabs items={APPLICATION_STATUSES} value={statusFilter} onChange={value => { if (value !== statusFilter) { startQuery(); setStatusFilter(value) } }} label="Filter applications by status" />
           {loading ? (
             <Panel><p role="status">Loading applications…</p></Panel>
           ) : items.length ? (
             <>
               <p className="p-result-count" role="status">{loading ? '' : `${count} application${count === 1 ? '' : 's'}`}</p>
               <div className="p-stack">{items.map(application => <ApplicationCard key={application.id} application={application} onWithdraw={setWithdrawTarget} />)}</div>
+              {moreError && <p role="alert" className="p-error">{moreError}</p>}
               {hasMore && (
                 <button type="button" className="p-button secondary" disabled={loadingMore} onClick={loadMore}>
-                  {loadingMore ? 'Loading…' : 'Load more applications'}
+                  {loadingMore ? 'Loading…' : moreError ? 'Try loading more again' : 'Load more applications'}
                 </button>
               )}
             </>
@@ -562,7 +632,6 @@ export function ApplicationDetailPage() {
             <dl className="p-definition">
               <div><dt>Applied</dt><dd>{dateLabel(application.appliedAt)}</dd></div>
               <div><dt>Last update</dt><dd>{application.statusChangedAt ? dateLabel(application.statusChangedAt) : 'Not yet reviewed'}</dd></div>
-              {application.decidedByEmail && <div><dt>Reviewed by</dt><dd>{application.decidedByEmail}</dd></div>}
             </dl>
             <Link to={`/p/${placement.slug}`} className="p-text-link">View the placement</Link>
           </Panel>
@@ -594,10 +663,7 @@ export function ApplicationDetailPage() {
                 <li key={event.id}>
                   <div>
                     <strong>{eventHeadline(event)}</strong>
-                    <p className="p-small">
-                      {dateLabel(event.createdAt)}
-                      {event.actorEmail ? ` · ${event.actorEmail}` : ''}
-                    </p>
+                    <p className="p-small">{dateLabel(event.createdAt)}</p>
                     {event.reason && <p className="p-small">{event.reason}</p>}
                   </div>
                 </li>

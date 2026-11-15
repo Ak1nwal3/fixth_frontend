@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { Copy, Check, X, CircleCheck, CircleAlert } from 'lucide-react'
 export function Badge({ children, tone }: { children: ReactNode; tone?: 'success' | 'warning' | 'danger' | 'neutral' }) {
   const text = String(children)
@@ -7,9 +7,9 @@ export function Badge({ children, tone }: { children: ReactNode; tone?: 'success
 }
 export function Panel({ children, className = '' }: { children: ReactNode; className?: string }) { return <section className={`p-panel ${className}`}>{children}</section> }
 export function Avatar({ src, fallback, className = '' }: { src?: string | null; fallback: ReactNode; className?: string }) {
-  const [failed, setFailed] = useState(false)
-  useEffect(() => { setFailed(false) }, [src])
-  return <span className={`p-avatar${className ? ` ${className}` : ''}`}>{src && !failed ? <img src={src} alt="" onError={() => setFailed(true)} /> : fallback}</span>
+  // Remember which URL failed, so a new src gets a fresh attempt.
+  const [failedSrc, setFailedSrc] = useState<string | null>(null)
+  return <span className={`p-avatar${className ? ` ${className}` : ''}`}>{src && failedSrc !== src ? <img src={src} alt="" onError={() => setFailedSrc(src)} /> : fallback}</span>
 }
 export function Empty({ title, children }: { title: string; children?: ReactNode }) { return <div className="p-empty"><CircleAlert size={28} aria-hidden /><h2>{title}</h2>{children}</div> }
 export function Metrics({ items }: { items: [string, number | string][] }) { return <dl className="p-metrics">{items.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl> }
@@ -18,6 +18,7 @@ export function Tabs({ items, value, onChange, label }: { items: string[]; value
 }
 export function Modal({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null
     return () => previous?.focus()
@@ -29,7 +30,7 @@ export function Modal({ title, children, onClose }: { title: string; children: R
     dialog.addEventListener('close', close)
     return () => dialog.removeEventListener('close', close)
   }, [onClose])
-  return <dialog ref={ref} className="p-dialog" aria-modal="true" aria-labelledby="dialog-title" onClick={e => { if (e.target === e.currentTarget) onClose() }}><div className="p-dialog-content"><div className="p-between"><h2 id="dialog-title">{title}</h2><button type="button" className="p-icon" onClick={onClose} aria-label="Close dialog"><X aria-hidden size={20} /></button></div>{children}</div></dialog>
+  return <dialog ref={ref} className="p-dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => { if (e.target === e.currentTarget) onClose() }}><div className="p-dialog-content"><div className="p-between"><h2 id={titleId}>{title}</h2><button type="button" className="p-icon" onClick={onClose} aria-label="Close dialog"><X aria-hidden size={20} /></button></div>{children}</div></dialog>
 }
 export function CopyLink({ slug, title }: { slug: string; title: string }) {
   const [copied, setCopied] = useState(false)

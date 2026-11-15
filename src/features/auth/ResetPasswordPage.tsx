@@ -10,13 +10,16 @@ import { apiErrorMessage } from '@/services/types'
 
 /**
  * Consumes the `/reset-password?uid=<uid>&token=<token>` links the backend
- * emails, and posts the new password to the matching role's confirm endpoint.
+ * emails. The link does not say which account type it belongs to, so the page
+ * tries the hinted (`?role=`) or student endpoint first and falls back to the
+ * organization endpoint when the token is not recognized there.
  */
 export default function ResetPasswordPage() {
   const [params] = useSearchParams()
   const uid = params.get('uid') || ''
   const token = params.get('token') || ''
-  const [accountType, setAccountType] = useState<AuthAccountType>('student')
+  const roleHint = params.get('role') === 'organization' ? 'organization' : 'student'
+  const [accountType, setAccountType] = useState<AuthAccountType>(roleHint)
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [busy, setBusy] = useState(false)
@@ -49,12 +52,23 @@ export default function ResetPasswordPage() {
     }
     setBusy(true)
     setMessage('')
+    const payload = { uid, token, new_password: password }
+    const other: AuthAccountType = roleHint === 'organization' ? 'student' : 'organization'
     try {
-      await confirmPasswordReset(organization ? 'organization' : 'student', {
-        uid,
-        token,
-        new_password: password,
-      })
+      try {
+        await confirmPasswordReset(roleHint, payload)
+        setAccountType(roleHint)
+      } catch (first) {
+        // Password rule errors are about the new password, not the account
+        // type; anything else may mean the link belongs to the other role.
+        if (!(first instanceof ApiError) || first.status !== 400 || isPasswordError(first.body)) throw first
+        try {
+          await confirmPasswordReset(other, payload)
+          setAccountType(other)
+        } catch (second) {
+          throw second instanceof ApiError && isPasswordError(second.body) ? second : first
+        }
+      }
       setDone(true)
     } catch (error) {
       if (error instanceof ApiError) {
@@ -70,7 +84,7 @@ export default function ResetPasswordPage() {
   return (
     <AuthShell brand="" accountType={accountType} story="Let’s get you back to your opportunities.">
       <ValidatedForm className="onboarding-form" onSubmit={submit}>
-        <p className="auth-eyebrow">{organization ? 'Organization account' : 'Student account'}</p>
+        {done && <p className="auth-eyebrow">{organization ? 'Organization account' : 'Student account'}</p>}
         <h1>Choose a new password</h1>
         {done ? (
           <>
@@ -84,14 +98,6 @@ export default function ResetPasswordPage() {
         ) : (
           <>
             <p>Enter a new password for your account. The reset link can only be used once.</p>
-            <div className="flex flex-wrap gap-3 text-sm text-brand" role="group" aria-label="Account type">
-              <button type="button" className="min-h-10" aria-pressed={!organization} onClick={() => setAccountType('student')}>
-                Student
-              </button>
-              <button type="button" className="min-h-10" aria-pressed={organization} onClick={() => setAccountType('organization')}>
-                Organization
-              </button>
-            </div>
             <Field className="auth-field">
               <span>New password</span>
               <input
@@ -134,4 +140,9 @@ export default function ResetPasswordPage() {
       </ValidatedForm>
     </AuthShell>
   )
+}
+
+/** True when a DRF error body is about the new password's rules. */
+function isPasswordError(body: unknown): boolean {
+  return !!body && typeof body === 'object' && 'new_password' in body
 }

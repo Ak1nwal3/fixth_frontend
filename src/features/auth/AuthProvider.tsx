@@ -3,7 +3,7 @@ import { getMe, signIn as apiSignIn, signOut as apiSignOut } from '@/services/au
 import { ApiError } from '@/services/http'
 import type { ApiUser } from '@/services/types'
 import { AuthContext, type AuthValue } from './useAuth'
-import { clearSession, getSession, onSessionExpired, setSession, type AuthRole } from './session'
+import { SESSION_STORAGE_KEY, clearSession, getSession, onSessionExpired, setSession, type AuthRole } from './session'
 
 /**
  * Restores the stored session on mount (validating it against `/me/`, with a
@@ -11,17 +11,13 @@ import { clearSession, getSession, onSessionExpired, setSession, type AuthRole }
  * sync when the HTTP layer reports an unrecoverable 401.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [status, setStatus] = useState<AuthValue['status']>('loading')
-  const [user, setUser] = useState<ApiUser | null>(null)
+  // Restore the stored session synchronously; `/me/` then validates it.
+  const [status, setStatus] = useState<AuthValue['status']>(() => (getSession() ? 'signed-in' : 'signed-out'))
+  const [user, setUser] = useState<ApiUser | null>(() => getSession()?.user ?? null)
 
   useEffect(() => {
     const session = getSession()
-    if (!session) {
-      setStatus('signed-out')
-      return
-    }
-    setUser(session.user)
-    setStatus('signed-in')
+    if (!session) return
     let live = true
     getMe(session.role)
       .then(me => {
@@ -51,6 +47,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }),
     [],
   )
+
+  // Keep tabs in sync: signing in, out, or switching accounts in one tab
+  // updates every other open tab instead of leaving it on a stale session.
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== SESSION_STORAGE_KEY && event.key !== null) return
+      const session = getSession()
+      if (session) {
+        // Token rotations in another tab also fire this; keep the same user
+        // object then so dependent effects do not refetch.
+        setUser(current =>
+          current && current.id === session.user.id && current.role === session.user.role ? current : session.user,
+        )
+        setStatus('signed-in')
+      } else {
+        setUser(null)
+        setStatus('signed-out')
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
 
   const signIn = useCallback(async (role: AuthRole, email: string, password: string) => {
     const response = await apiSignIn(role, email, password)

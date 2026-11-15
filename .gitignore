@@ -27,3 +27,4 @@ dist-ssr
 .browser-check*/
 .verification/
 onboarding-desktop.png
+.env

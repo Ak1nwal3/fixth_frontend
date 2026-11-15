@@ -11,6 +11,7 @@ import {
   type CompanyProfile as CompanyProfileData,
 } from '@/services/companies'
 import { apiErrorMessage } from '@/services/types'
+import { passwordError } from '@/lib/password'
 import { Avatar, Badge, Panel } from './components/ui'
 
 function messageFor(error: unknown, fallback: string) {
@@ -56,8 +57,11 @@ function companyToForm(company: CompanyProfileData): CompanyForm {
 export function CompanyProfilePage() {
   const { user, refreshUser, signOut } = useAuth()
   const navigate = useNavigate()
-  const [firstName, setFirstName] = useState(user?.first_name || '')
-  const [lastName, setLastName] = useState(user?.last_name || '')
+  // Unedited fields follow the account (e.g. after refreshUser); edits win.
+  const [firstNameDraft, setFirstName] = useState<string | null>(null)
+  const [lastNameDraft, setLastName] = useState<string | null>(null)
+  const firstName = firstNameDraft ?? user?.first_name ?? ''
+  const lastName = lastNameDraft ?? user?.last_name ?? ''
   const [nameBusy, setNameBusy] = useState(false)
   const [nameMessage, setNameMessage] = useState('')
   const [currentPassword, setCurrentPassword] = useState('')
@@ -80,14 +84,7 @@ export function CompanyProfilePage() {
     void refreshUser().catch(() => undefined)
   }, [refreshUser])
 
-  useEffect(() => {
-    setFirstName(user?.first_name || '')
-    setLastName(user?.last_name || '')
-  }, [user?.first_name, user?.last_name])
-
-  const loadCompany = () => {
-    setCompanyStatus('loading')
-    setCompanyLoadError('')
+  const fetchCompany = () => {
     getCompanyProfile()
       .then(data => {
         setCompany(data)
@@ -104,7 +101,15 @@ export function CompanyProfilePage() {
       })
   }
 
-  useEffect(loadCompany, [])
+  const loadCompany = () => {
+    setCompanyStatus('loading')
+    setCompanyLoadError('')
+    fetchCompany()
+  }
+
+  // Initial state is already 'loading', so mount only needs the fetch.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(fetchCompany, [])
 
   const notify = (text: string, error = false) => setCompanyNotice({ text, error })
 
@@ -189,7 +194,11 @@ export function CompanyProfilePage() {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
       })
-      await refreshUser()
+      // Once the account reloads, show its values; if that fails keep the edits.
+      if (await refreshUser().then(() => true, () => false)) {
+        setFirstName(null)
+        setLastName(null)
+      }
       setNameMessage('Organization account name updated.')
     } catch (error) {
       setNameMessage(messageFor(error, 'Your name could not be updated.'))
@@ -201,8 +210,14 @@ export function CompanyProfilePage() {
   const savePassword = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setPasswordMessage('')
-    if (newPassword.length < 8) {
-      setPasswordMessage('Use at least 8 characters for the new password.')
+    if (!currentPassword) {
+      setPasswordMessage('Enter your current password.')
+      return
+    }
+    // Same rules as onboarding and password reset.
+    const ruleError = passwordError(newPassword, user?.email)
+    if (ruleError) {
+      setPasswordMessage(ruleError)
       return
     }
     if (newPassword !== confirmPassword) {
@@ -297,7 +312,7 @@ export function CompanyProfilePage() {
                 <Avatar className="company-mark large" src={company.logo?.url ?? null} fallback={company.name.slice(0, 1)} />
                 <div>
                   <h3>{company.name}</h3>
-                  <p>Public profile: /companies/{company.slug}</p>
+                  <p>Shown to students on your placement pages</p>
                 </div>
               </div>
               <form className="p-form" onSubmit={saveCompany}>
@@ -322,8 +337,13 @@ export function CompanyProfilePage() {
                   </label>
                   <label className="p-field">
                     <span>Website</span>
+                    {/* Plain text, not type="url": the API accepts a bare domain
+                        and normalizes it to https://, as onboarding does. */}
                     <input
-                      type="url"
+                      type="text"
+                      inputMode="url"
+                      autoComplete="url"
+                      placeholder="yourcompany.com"
                       maxLength={200}
                       value={form.website}
                       onChange={event => setForm({ ...form, website: event.target.value })}
@@ -490,6 +510,7 @@ export function CompanyProfilePage() {
                 <span>Current password</span>
                 <input
                   type="password"
+                  required
                   value={currentPassword}
                   autoComplete="current-password"
                   onChange={event => setCurrentPassword(event.target.value)}
@@ -533,10 +554,9 @@ export function CompanyProfilePage() {
             </h2>
             <p>
               {company
-                ? `These details identify ${company.name} across Fixth, including the public company profile students can view.`
+                ? `These details identify ${company.name} across Fixth, including the company panel students see on your placements.`
                 : 'Company name, industry, location, logo, and description are saved during onboarding and can be edited here once the company profile is available.'}
             </p>
-            {company?.slug && <Badge tone="neutral">Public profile: /{company.slug}</Badge>}
             {user && 'company_id' in user && Boolean(user.company_id) && (
               <Badge tone="success">Linked to your company record</Badge>
             )}

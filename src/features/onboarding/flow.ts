@@ -14,10 +14,61 @@ export const flows: Record<Track, Step[]> = {
     { ...code, story: 'One quick check, then we’ll build your profile together.' },
     { ...password, story: 'One password, then we’ll build your profile together.' },
     { slug: 'about', title: 'Tell us about you', subtitle: 'Add the essentials recruiters will see first.', story: 'Your next opportunity starts with a profile that feels like you.', upload: 'Upload photo', fields: [{ name: 'firstName', label: 'First name' }, { name: 'lastName', label: 'Last name' }, { name: 'phone', label: 'Phone number', type: 'tel' }, { name: 'location', label: 'Location', placeholder: 'City, country' }] },
-    { slug: 'education', title: 'Your education', subtitle: 'Help us find relevant opportunities.', story: 'Your next opportunity starts with a profile that feels like you.', upload: 'School ID or letter', fields: [{ name: 'institution', label: 'Institution' }, { name: 'course', label: 'Course of study' }, { name: 'level', label: 'Level', options: ['100 level', '200 level', '300 level', '400 level', '500 level', 'Graduate'] }] },
+    { slug: 'education', title: 'Your education', subtitle: 'Help us find relevant opportunities.', story: 'Your next opportunity starts with a profile that feels like you.', fields: [{ name: 'institution', label: 'Institution' }, { name: 'course', label: 'Course of study' }, { name: 'level', label: 'Level', options: ['100 level', '200 level', '300 level', '400 level', '500 level', '600 level', '700 level'] }] },
     { slug: 'skills', title: 'Showcase your skills', subtitle: 'Pick strengths that represent you.', story: 'Your next opportunity starts with a profile that feels like you.' },
     { slug: 'review', title: 'Review your profile', subtitle: 'Confirm your details before finishing.', story: 'Your next opportunity starts with a profile that feels like you.' }],
 }
-export function readDraft(track: Track): Draft { try { return JSON.parse(sessionStorage.getItem(`fixth-onboarding-${track}`) || '{}') as Draft } catch { return {} } }
-export function saveDraft(track: Track, draft: Draft) { try { sessionStorage.setItem(`fixth-onboarding-${track}`, JSON.stringify(draft)) } catch { /* Storage can be unavailable in private browsing. */ } }
-export function clearDraft(track: Track) { try { sessionStorage.removeItem(`fixth-onboarding-${track}`) } catch { /* Storage can be unavailable in private browsing. */ } }
+
+/** Parses a level option such as "400 level" into the API's 100–700 integer, or null. */
+export function parseLevel(value: string | undefined): number | null {
+  const level = Number.parseInt(value ?? '', 10)
+  return Number.isInteger(level) && level >= 100 && level <= 700 && level % 100 === 0 ? level : null
+}
+
+/**
+ * Credentials and one-time secrets are never written to sessionStorage, where
+ * any script on the origin could read them. They live in memory for this tab
+ * only; after a reload the flow guards send the user back to re-enter them.
+ */
+const SENSITIVE_KEYS = ['password', 'passwordSet', 'code', 'verificationToken', 'demoOtp'] as const
+const memory: Record<Track, Draft> = { organization: {}, student: {} }
+
+function storageKey(track: Track) {
+  return `fixth-onboarding-${track}`
+}
+
+export function readDraft(track: Track): Draft {
+  let stored: Draft = {}
+  try {
+    stored = JSON.parse(sessionStorage.getItem(storageKey(track)) || '{}') as Draft
+  } catch {
+    stored = {}
+  }
+  // Drafts written by older builds may still hold secrets; never read them back.
+  for (const key of SENSITIVE_KEYS) delete stored[key]
+  return { ...stored, ...memory[track] }
+}
+
+export function saveDraft(track: Track, draft: Draft) {
+  const persisted: Draft = { ...draft }
+  const secrets: Draft = {}
+  for (const key of SENSITIVE_KEYS) {
+    if (draft[key] !== undefined) secrets[key] = draft[key]
+    delete persisted[key]
+  }
+  memory[track] = secrets
+  try {
+    sessionStorage.setItem(storageKey(track), JSON.stringify(persisted))
+  } catch {
+    /* Storage can be unavailable in private browsing. */
+  }
+}
+
+export function clearDraft(track: Track) {
+  memory[track] = {}
+  try {
+    sessionStorage.removeItem(storageKey(track))
+  } catch {
+    /* Storage can be unavailable in private browsing. */
+  }
+}
