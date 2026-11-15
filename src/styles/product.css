@@ -269,3 +269,4 @@ a.p-header-user:hover { background:#00002e14; }
 @media(max-width:1000px) { .p-header-user { min-width:36px; max-width:36px; } }
 @media(max-width:1000px) { .details .p-apply-panel:has(.p-callout) { position:static; } }
 @media(max-width:1000px) and (max-height:500px) { .details .p-apply-panel { position:static; } }
+.p-main:focus { outline:none; } /* focused programmatically on navigation for screen readers; no visible ring needed */

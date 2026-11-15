@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { fileSizeLabel, fileTypeLabel, shortenFileName } from '@/lib/files'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { Bookmark, MapPin, Clock3, GraduationCap, ArrowRight, FileText, ShieldCheck } from 'lucide-react'
 import { useAuth } from '@/features/auth/useAuth'
@@ -641,8 +642,8 @@ export function ApplicationDetailPage() {
               <div className="p-file">
                 <FileText aria-hidden size={26} />
                 <div className="p-grow">
-                  <strong>{application.resume.original_name}</strong>
-                  <small>{(application.resume.size / 1024).toFixed(0)} KB · {application.resume.mime_type}</small>
+                  <strong className="file-name" title={application.resume.original_name}>{shortenFileName(application.resume.original_name)}</strong>
+                  <small>{fileSizeLabel(application.resume.size)} · {fileTypeLabel(application.resume.mime_type)}</small>
                 </div>
               </div>
             ) : (

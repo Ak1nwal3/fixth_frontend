@@ -13,6 +13,7 @@ import {
 import { apiErrorMessage } from '@/services/types'
 import { passwordError } from '@/lib/password'
 import { Avatar, Badge, Panel } from './components/ui'
+import PasswordInput from '@/components/common/PasswordInput'
 
 function messageFor(error: unknown, fallback: string) {
   if (error instanceof ApiError) {
@@ -508,8 +509,7 @@ export function CompanyProfilePage() {
             <form className="p-form" onSubmit={savePassword}>
               <label className="p-field">
                 <span>Current password</span>
-                <input
-                  type="password"
+                <PasswordInput
                   required
                   value={currentPassword}
                   autoComplete="current-password"
@@ -519,8 +519,7 @@ export function CompanyProfilePage() {
               <div className="p-form-grid">
                 <label className="p-field">
                   <span>New password</span>
-                  <input
-                    type="password"
+                  <PasswordInput
                     minLength={8}
                     value={newPassword}
                     autoComplete="new-password"
@@ -529,8 +528,7 @@ export function CompanyProfilePage() {
                 </label>
                 <label className="p-field">
                   <span>Confirm new password</span>
-                  <input
-                    type="password"
+                  <PasswordInput
                     minLength={8}
                     value={confirmPassword}
                     autoComplete="new-password"

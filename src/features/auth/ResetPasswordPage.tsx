@@ -7,6 +7,7 @@ import { passwordError } from '@/lib/password'
 import { confirmPasswordReset } from '@/services/auth'
 import { ApiError } from '@/services/http'
 import { apiErrorMessage } from '@/services/types'
+import PasswordInput from '@/components/common/PasswordInput'
 
 /**
  * Consumes the `/reset-password?uid=<uid>&token=<token>` links the backend
@@ -100,9 +101,8 @@ export default function ResetPasswordPage() {
             <p>Enter a new password for your account. The reset link can only be used once.</p>
             <Field className="auth-field">
               <span>New password</span>
-              <input
+              <PasswordInput
                 name="newPassword"
-                type="password"
                 required
                 minLength={8}
                 autoComplete="new-password"
@@ -115,9 +115,8 @@ export default function ResetPasswordPage() {
             </Field>
             <Field className="auth-field">
               <span>Confirm new password</span>
-              <input
+              <PasswordInput
                 name="confirmPassword"
-                type="password"
                 required
                 minLength={8}
                 autoComplete="new-password"

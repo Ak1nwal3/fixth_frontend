@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowLeft, CheckCircle2, ShieldCheck, Upload } from 'luc
 import AuthShell from './components/AuthShell'
 import ProgressSteps from './components/ProgressSteps'
 import PrimaryButton from './components/PrimaryButton'
+import PasswordInput from '@/components/common/PasswordInput'
 import VerificationCode from './components/VerificationCode'
 import { clearDraft, flows, parseLevel, readDraft, saveDraft, type Draft, type Track } from './flow'
 import { env } from '@/config/env'
@@ -34,7 +35,6 @@ function OnboardingFlow({ track, slug }: { track: Track; slug: string }) {
   const [code, setCode] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [search, setSearch] = useState('')
   const [busy, setBusy] = useState(false)
   const [cooldown, setCooldown] = useState(0)
@@ -347,9 +347,8 @@ function OnboardingFlow({ track, slug }: { track: Track; slug: string }) {
       </label>)}
       {slug === 'code' && <><VerificationCode value={code} onChange={value => { setCode(value); setErrors(current => ({ ...current, code: '' })) }} invalid={!!errors.code} />{errors.code && <p id="code-error" className="auth-field-error">{errors.code}</p>}<p id="verification-note" className="auth-note">We emailed a 6-digit code. It expires after 10 minutes.</p>{env.showDemoOtp && draft.demoOtp && <p role="status" className="auth-alert" data-tone="status"><CheckCircle2 size={16} aria-hidden />Email delivery is unavailable on this deployment. Your demo code: <strong>{draft.demoOtp}</strong></p>}</>}
       {slug === 'password' && <>
-        <label className="auth-field"><span>Password</span><input name="password" type={showPassword ? 'text' : 'password'} required minLength={8} autoComplete="new-password" value={password} aria-invalid={!!errors.password || undefined} aria-describedby="password-rules" onChange={e => { setPassword(e.target.value); setErrors(current => ({ ...current, password: '' })); setMessage('') }} />{errors.password && <span className="auth-field-error">{errors.password}</span>}</label>
-        <label className="auth-field"><span>Confirm password</span><input name="confirmPassword" type={showPassword ? 'text' : 'password'} required minLength={8} autoComplete="new-password" value={confirm} aria-invalid={!!errors.confirmPassword || undefined} aria-describedby="password-rules" onChange={e => { setConfirm(e.target.value); setErrors(current => ({ ...current, confirmPassword: '' })); setMessage('') }} />{errors.confirmPassword && <span className="auth-field-error">{errors.confirmPassword}</span>}</label>
-        <button type="button" className="auth-text-link self-start" onClick={() => setShowPassword(!showPassword)}>{showPassword ? 'Hide passwords' : 'Show passwords'}</button>
+        <label className="auth-field"><span>Password</span><PasswordInput name="password" required minLength={8} autoComplete="new-password" value={password} aria-invalid={!!errors.password || undefined} aria-describedby="password-rules" onChange={e => { setPassword(e.target.value); setErrors(current => ({ ...current, password: '' })); setMessage('') }} />{errors.password && <span className="auth-field-error">{errors.password}</span>}</label>
+        <label className="auth-field"><span>Confirm password</span><PasswordInput name="confirmPassword" required minLength={8} autoComplete="new-password" value={confirm} aria-invalid={!!errors.confirmPassword || undefined} aria-describedby="password-rules" onChange={e => { setConfirm(e.target.value); setErrors(current => ({ ...current, confirmPassword: '' })); setMessage('') }} />{errors.confirmPassword && <span className="auth-field-error">{errors.confirmPassword}</span>}</label>
         <div className="auth-strength" aria-hidden="true">
           {passwordRules.map(rule => <span key={rule.id} data-met={rule.test(password)} />)}
         </div>

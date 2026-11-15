@@ -1,8 +1,9 @@
-﻿import { Field, ValidatedForm } from '@/features/product/components/Form'
+import { Field, ValidatedForm } from '@/features/product/components/Form'
 import { useState, type SubmitEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import AuthShell, { type AuthAccountType } from '@/features/onboarding/components/AuthShell'
 import PrimaryButton from '@/features/onboarding/components/PrimaryButton'
+import PasswordInput from '@/components/common/PasswordInput'
 import { useAuth } from './useAuth'
 import { requestPasswordReset } from '@/services/auth'
 import { ApiError } from '@/services/http'
@@ -10,7 +11,6 @@ import { apiErrorMessage } from '@/services/types'
 
 export default function SignInPage({ reset = false, accountType = 'student' }: { reset?: boolean; accountType?: AuthAccountType }) {
   const organization = accountType === 'organization'
-  const [visible, setVisible] = useState(false)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const { signIn } = useAuth()
@@ -79,7 +79,7 @@ export default function SignInPage({ reset = false, accountType = 'student' }: {
     <ValidatedForm key={`${accountType}-${reset}`} className="onboarding-form" onSubmit={submit}>
       <p className="auth-eyebrow">{organization ? 'Organization account' : 'Student account'}</p><h1>{reset ? 'Reset your password' : 'Welcome back'}</h1><p>{reset ? (organization ? 'Enter the work email linked to your organization account. We’ll send you a secure password reset link.' : 'Enter the email linked to your student account. We’ll send you a secure password reset link.') : (organization ? 'Sign in to manage your organization’s placements and applicants.' : 'Sign in to continue to your student dashboard.')}</p>
       <Field className="auth-field"><span>{reset ? 'Email address' : organization ? 'Work email address' : 'Student email address'}</span><input name="email" type="email" required autoComplete="email" /></Field>
-      {!reset && <><Field className="auth-field"><span>Password</span><input name="password" type={visible ? 'text' : 'password'} required autoComplete="current-password" /></Field><div className="flex flex-wrap justify-between gap-3 text-sm text-brand"><button type="button" className="min-h-10" onClick={() => setVisible(!visible)}>{visible ? 'Hide password' : 'Show password'}</button><Link className="inline-flex min-h-10 items-center" to={forgotPath} onClick={() => setMessage('')}>Forgot password?</Link></div></>}
+      {!reset && <><Field className="auth-field"><span>Password</span><PasswordInput name="password" required autoComplete="current-password" /></Field><div className="flex flex-wrap justify-end gap-3 text-sm text-brand"><Link className="inline-flex min-h-10 items-center" to={forgotPath} onClick={() => setMessage('')}>Forgot password?</Link></div></>}
       <p className="auth-note">{reset ? 'We’ll only use this email to send your secure reset link.' : <>New to Fixth? <Link to={signUpPath} className="text-brand">Create your {organization ? 'organization' : 'student'} account.</Link></>}</p>
       <p role="status">{message}</p><div className="auth-actions"><PrimaryButton type="submit" disabled={busy}>{busy ? (reset ? 'Sending…' : 'Signing in…') : reset ? 'Send reset link' : 'Sign in'}</PrimaryButton></div>{reset ? <Link to={signInPath} onClick={() => setMessage('')} className="auth-text-link">Back to sign in</Link> : null}
     </ValidatedForm>

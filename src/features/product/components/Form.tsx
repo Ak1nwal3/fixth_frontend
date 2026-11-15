@@ -1,4 +1,6 @@
 import { Children, cloneElement, createContext, isValidElement, useContext, useId, useState, type ReactNode, type ReactElement, type FormHTMLAttributes, type LabelHTMLAttributes, type InputHTMLAttributes } from 'react'
+import PasswordInput from '@/components/common/PasswordInput'
+const isControl = (child: ReactNode) => isValidElement(child) && (child.type === PasswordInput || ['input', 'select', 'textarea'].includes(String(child.type)))
 const ErrorContext = createContext<Record<string, string>>({})
 export function ValidatedForm({ children, onSubmit, onInvalidCapture, onInputCapture, ...props }: FormHTMLAttributes<HTMLFormElement>) {
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -36,12 +38,12 @@ export function Field({ children, className = 'p-field', ...props }: LabelHTMLAt
   const errors = useContext(ErrorContext)
   const errorId = useId()
   const error = Children.toArray(children).flatMap(child => {
-    if (!isValidElement(child) || !['input', 'select', 'textarea'].includes(String(child.type))) return []
+    if (!isValidElement(child) || !isControl(child)) return []
     const name = (child as ReactElement<InputHTMLAttributes<HTMLInputElement>>).props.name || ''
     return errors[name] ? [errors[name]] : []
   })[0] || ''
   const controls = Children.map(children, child => {
-    if (!isValidElement(child) || !['input', 'select', 'textarea'].includes(String(child.type))) return child
+    if (!isValidElement(child) || !isControl(child)) return child
     const control = child as ReactElement<InputHTMLAttributes<HTMLInputElement>>
     const fieldError = errors[control.props.name || '']
     if (!fieldError) return child

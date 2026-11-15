@@ -232,3 +232,17 @@
 .auth-story { position:relative; inset:auto; margin-top:auto; margin-right:8px; flex-shrink:0; }
 .auth-brand-image { inset:0; }
 @media(max-width:900px) { .auth-brand { display:none; } }
+
+/* Password field with a show/hide eye button (PasswordInput). */
+.password-input { position: relative; display: block; width: 100%; min-width: 0; }
+.password-input > input { width: 100%; padding-right: 46px !important; }
+.password-input-toggle { position: absolute; top: 50%; right: 4px; transform: translateY(-50%); display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 8px; color: #626978; transition: color .15s, background-color .15s; }
+.password-input-toggle:hover:not(:disabled) { color: var(--color-brand); background: rgb(0 0 0 / .04); }
+.password-input-toggle:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 1px; }
+.password-input-toggle[aria-pressed=true] { color: var(--color-brand); }
+.password-input-toggle:disabled { cursor: not-allowed; opacity: .5; }
+/* Hide Edge/IE's built-in reveal button so there is only one eye. */
+.password-input > input::-ms-reveal, .password-input > input::-ms-clear { display: none; }
+
+/* Long file names: break anywhere, then cap at two lines with an ellipsis. */
+.file-name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; word-break: break-word; min-width: 0; max-width: 100%; }

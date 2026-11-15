@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { fileSizeLabel, fileTypeLabel, shortenFileName } from '@/lib/files'
 import { Link, useLocation, useParams } from 'react-router'
 import { FileText, MapPin } from 'lucide-react'
 import { useDebounced } from '@/hooks/useDebounced'
@@ -598,10 +599,10 @@ function ApplicantReview({ applicationId }: { applicationId?: string }) {
           <div className="p-file">
             <FileText size={24} aria-hidden />
             <span className="p-grow">
-              {resume ? resume.original_name : 'No resume attached'}
+              {resume ? <span className="file-name" title={resume.original_name}>{shortenFileName(resume.original_name)}</span> : 'No resume attached'}
               <small>
                 {resume
-                  ? `${Math.max(1, Math.round(resume.size / 1024))} KB · ${resume.mime_type}`
+                  ? `${fileSizeLabel(resume.size)} · ${fileTypeLabel(resume.mime_type)}`
                   : 'The applicant did not attach a resume.'}
               </small>
             </span>
