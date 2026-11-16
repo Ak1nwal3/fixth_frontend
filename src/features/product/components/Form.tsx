@@ -1,5 +1,6 @@
 import { Children, cloneElement, createContext, isValidElement, useContext, useId, useState, type ReactNode, type ReactElement, type FormHTMLAttributes, type LabelHTMLAttributes, type InputHTMLAttributes } from 'react'
 import PasswordInput from '@/components/common/PasswordInput'
+import { firstOverLimit } from '@/lib/limits'
 const isControl = (child: ReactNode) => isValidElement(child) && (child.type === PasswordInput || ['input', 'select', 'textarea'].includes(String(child.type)))
 const ErrorContext = createContext<Record<string, string>>({})
 export function ValidatedForm({ children, onSubmit, onInvalidCapture, onInputCapture, ...props }: FormHTMLAttributes<HTMLFormElement>) {
@@ -20,6 +21,15 @@ export function ValidatedForm({ children, onSubmit, onInvalidCapture, onInputCap
       )
       invalid.reportValidity()
       invalid.focus()
+      return
+    }
+    // Soft length limits (`data-max`): block submit and point at the field.
+    const tooLong = firstOverLimit(event.currentTarget)
+    if (tooLong) {
+      event.preventDefault()
+      const name = tooLong.element.name
+      if (name) setErrors(current => ({ ...current, [name]: tooLong.message }))
+      tooLong.element.focus()
       return
     }
     onSubmit?.(event)

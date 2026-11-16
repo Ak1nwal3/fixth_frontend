@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import CharCount from '@/components/common/CharCount'
+import { LIMITS, lengthError } from '@/lib/limits'
 import { fileSizeLabel, fileTypeLabel, shortenFileName } from '@/lib/files'
 import { Link, useLocation, useParams } from 'react-router'
 import { FileText, MapPin } from 'lucide-react'
@@ -249,11 +251,9 @@ function Applicants({ id }: { id?: string }) {
             {placement.location} · {placement.workStyle} · {placement.duration}
           </p>
           <div className="p-row-actions">
-            {placement.status === 'Active' && (
-              <Link to={`/p/${placement.slug}`} className="p-button subtle">
-                View listing
-              </Link>
-            )}
+            <Link to={`/company/placements/${placement.id}`} className="p-button subtle">
+              View listing
+            </Link>
             <Link to={`/company/placements/${placement.id}/edit`} className="p-button subtle">
               Edit placement
             </Link>
@@ -766,13 +766,14 @@ function ApplicantReview({ applicationId }: { applicationId?: string }) {
               <span>Reason (optional)</span>
               <textarea
                 value={rejectReason}
-                maxLength={500}
+                aria-invalid={rejectReason.length > LIMITS.decisionReason || undefined}
                 onChange={event => {
                   setRejectReason(event.target.value)
                   setRejectError('')
                 }}
                 placeholder="Share feedback the student will see"
               />
+              <CharCount value={rejectReason} max={LIMITS.decisionReason} />
             </label>
             {rejectError && <p className="p-error">{rejectError}</p>}
             <div className="p-actions">
@@ -788,7 +789,11 @@ function ApplicantReview({ applicationId }: { applicationId?: string }) {
                 type="button"
                 className="p-button danger"
                 disabled={!!busyStatus}
-                onClick={() => void changeStatus('Rejected', rejectReason.trim() || undefined)}
+                onClick={() => {
+                  const tooLong = lengthError(rejectReason, LIMITS.decisionReason)
+                  if (tooLong) return setRejectError(tooLong)
+                  void changeStatus('Rejected', rejectReason.trim() || undefined)
+                }}
               >
                 {busyStatus === 'Rejected' ? 'Rejecting…' : 'Reject application'}
               </button>

@@ -11,8 +11,10 @@ export default defineConfig({
     proxy: {
       // The backend has no CORS configuration, so dev calls go through this
       // proxy using the default relative `/api/v1` base URL.
+      // DEV_API_PROXY=https://api.getfixth.com points local dev at the live
+      // API instead of a backend running on this machine.
       '/api': {
-        target: 'http://localhost:8000',
+        target: process.env.DEV_API_PROXY || 'http://localhost:8000',
         changeOrigin: true,
       },
     },

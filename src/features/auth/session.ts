@@ -7,6 +7,7 @@
  */
 import { env } from '@/config/env'
 import type { ApiUser } from '@/services/types'
+import { clearApiCache } from '@/services/cache'
 
 const STORAGE_KEY = 'fixth-auth'
 
@@ -37,6 +38,9 @@ export function getSession(): AuthSession | null {
 }
 
 export function setSession(session: AuthSession): void {
+  // A different account must never see the previous account's cached data.
+  const previous = getSession()
+  if (!previous || previous.user.id !== session.user.id || previous.role !== session.role) clearApiCache()
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
   } catch {
@@ -46,6 +50,7 @@ export function setSession(session: AuthSession): void {
 }
 
 export function clearSession(): void {
+  clearApiCache()
   try {
     localStorage.removeItem(STORAGE_KEY)
   } catch {

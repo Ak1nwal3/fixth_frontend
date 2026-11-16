@@ -270,3 +270,40 @@ a.p-header-user:hover { background:#00002e14; }
 @media(max-width:1000px) { .details .p-apply-panel:has(.p-callout) { position:static; } }
 @media(max-width:1000px) and (max-height:500px) { .details .p-apply-panel { position:static; } }
 .p-main:focus { outline:none; } /* focused programmatically on navigation for screen readers; no visible ring needed */
+
+/* Company placement listing cards: title + status, one meta line, chips that
+   wrap as whole pills, and actions vertically centred on the right. */
+.p-listing-cards { display:flex; flex-direction:column; gap:12px; list-style:none; margin:0; padding:0; }
+.p-listing-card { display:flex; align-items:center; gap:20px; padding:16px 18px; border:1px solid var(--p-line); border-radius:14px; background:white; transition:border-color .15s, box-shadow .15s; }
+.p-listing-card:hover { border-color:#c9d2f5; box-shadow:0 6px 16px #0b153f0d; }
+.p-listing-main { flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; }
+.p-listing-title { display:flex; align-items:center; gap:10px; min-width:0; }
+.p-listing-title h3 { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:var(--font-sans) !important; font-size:15px !important; }
+.p-listing-title h3 a:hover { color:var(--color-brand); }
+.p-listing-title .p-badge { flex-shrink:0; }
+.p-main .p-listing-sub { font-size:12px; line-height:1.4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.p-listing-meta { display:flex; flex-wrap:wrap; gap:6px; list-style:none; margin:2px 0 0; padding:0; }
+.p-listing-meta li { display:inline-flex; align-items:center; gap:5px; max-width:100%; padding:4px 9px; border-radius:999px; background:var(--p-bg); color:#303544; font-size:12px; line-height:1.35; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.p-listing-meta li svg { flex-shrink:0; color:#626978; }
+.p-listing-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; gap:6px; flex-shrink:0; max-width:46%; }
+.p-listing-actions .p-button { min-height:36px; padding:7px 11px; font-size:12px; }
+.p-listing-actions .p-copy { display:contents; }
+@media (max-width:860px) {
+  .p-listing-card { flex-direction:column; align-items:stretch; gap:12px; }
+  .p-listing-actions { max-width:none; justify-content:flex-start; padding-top:12px; border-top:1px solid var(--p-line); }
+  .p-listing-actions .p-button { flex:1 1 auto; min-height:40px; }
+}
+
+/* "Add" link next to an empty profile value. */
+.p-add-link { display:inline-flex; align-items:center; gap:4px; margin-left:4px; padding:2px 8px; border-radius:999px; background:var(--p-soft); color:var(--color-brand); font-size:12px; font-weight:600; white-space:nowrap; }
+.p-add-link:hover { background:#dfe5ff; }
+.p-muted { color:#8a90a0; }
+/* Checkbox group (student work type). */
+.p-checks { border:0; padding:0; margin:0; min-width:0; }
+.p-checks legend { margin-bottom:6px; }
+.p-checks>div { display:flex; flex-wrap:wrap; gap:8px; }
+.p-check { display:inline-flex; align-items:center; gap:8px; min-height:42px; padding:8px 14px; border:1px solid var(--p-line); border-radius:9px; background:white; cursor:pointer; font-weight:500; }
+.p-check:has(input:checked) { border-color:var(--color-brand); background:#eef1ff; color:var(--color-brand); }
+.p-field .p-check input { accent-color:var(--color-brand); width:16px; height:16px; min-height:0; padding:0; flex-shrink:0; }
+.p-field>label { display:block; }
+.p-prewrap { white-space:pre-line; }

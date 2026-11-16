@@ -14,6 +14,11 @@ import { completeOrganizationOnboarding, completeStudentOnboarding, requestOrgan
 import { uploadStudentPhoto } from '@/services/studentMedia'
 import { ApiError } from '@/services/http'
 import { apiErrorMessage } from '@/services/types'
+import Combobox from '@/components/common/Combobox'
+import CharCount from '@/components/common/CharCount'
+import { ENGINEERING_DISCIPLINES } from '@/lib/disciplines'
+import { NIGERIAN_UNIVERSITIES } from '@/lib/universities'
+import { firstOverLimit } from '@/lib/limits'
 
 /** Read from event handlers/effects only, keeping clock access out of render. */
 const timestamp = () => Date.now()
@@ -292,6 +297,12 @@ function OnboardingFlow({ track, slug }: { track: Track; slug: string }) {
   const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (busy) return
+    const tooLong = firstOverLimit(event.currentTarget)
+    if (tooLong) {
+      setErrors(current => ({ ...current, [tooLong.element.name]: tooLong.message }))
+      tooLong.element.focus()
+      return
+    }
     if (slug === 'code' && !/^\d{6}$/.test(code)) { notify('Enter all six digits.'); return }
     if (slug === 'password') {
       const error = keepingExistingPassword ? null : passwordError(password, draft.email) || (password !== confirm ? 'Passwords do not match.' : '')
@@ -338,12 +349,30 @@ function OnboardingFlow({ track, slug }: { track: Track; slug: string }) {
         else if (slug === 'about') pendingStudentPhotos.set('student', { email: draft.email, file })
         update(`${slug}File`, file.name); notify('')
       }} /><small id="upload-note">{organization && slug === 'details' ? 'JPEG, PNG, or WebP, maximum 5 MB. Uploaded when you finish.' : slug === 'about' ? 'PNG, JPEG, or WebP, maximum 2 MB. Saved to your profile when you finish.' : 'Maximum 5 MB. Your selection stays local to this preview.'}</small></label>}
-      {step.fields?.map(field => <label className="auth-field" key={field.name}>
+      {step.fields?.map(field => field.picker ? <div className="auth-field" key={field.name}>
+        <label htmlFor={`onboarding-${field.name}`}>{field.label}{field.optional ? ' (optional)' : ''}</label>
+        <Combobox
+          id={`onboarding-${field.name}`}
+          name={field.name}
+          required={!field.optional}
+          allowCustom={field.picker === 'university'}
+          options={field.picker === 'university' ? NIGERIAN_UNIVERSITIES : ENGINEERING_DISCIPLINES}
+          value={draft[field.name] || ''}
+          onChange={value => update(field.name, value)}
+          placeholder={field.placeholder}
+          invalid={!!errors[field.name]}
+          aria-describedby={errors[field.name] ? `${field.name}-error` : undefined}
+          pickMessage="Choose your course from the list."
+        />
+        {field.picker === 'university' && <span className="auth-field-hint">Not listed? Type your institution’s full name and pick “Use …”.</span>}
+        {errors[field.name] && <span id={`${field.name}-error`} className="auth-field-error">{errors[field.name]}</span>}
+      </div> : <label className="auth-field" key={field.name}>
         <span>{field.label}{field.optional ? ' (optional)' : ''}</span>
         {field.options ? <select name={field.name} required={!field.optional} value={draft[field.name] || ''} aria-invalid={!!errors[field.name] || undefined} aria-describedby={errors[field.name] ? `${field.name}-error` : undefined} onChange={e => update(field.name, e.target.value)}><option value="">Select {field.label.toLowerCase()}</option>{field.options.map(option => <option key={option}>{option}</option>)}</select>
-          : field.type === 'textarea' ? <textarea name={field.name} required={!field.optional} maxLength={500} value={draft[field.name] || ''} aria-invalid={!!errors[field.name] || undefined} aria-describedby={errors[field.name] ? `${field.name}-error` : undefined} onChange={e => update(field.name, e.target.value)} />
-          : <input name={field.name} required={!field.optional} type={field.type || 'text'} autoComplete={autocomplete[field.name] || 'off'} value={draft[field.name] || ''} placeholder={field.placeholder} aria-invalid={!!errors[field.name] || undefined} aria-describedby={errors[field.name] ? `${field.name}-error` : undefined} onChange={e => update(field.name, e.target.value)} />}
+          : field.type === 'textarea' ? <textarea name={field.name} required={!field.optional} data-max={field.max} value={draft[field.name] || ''} aria-invalid={!!errors[field.name] || undefined} aria-describedby={errors[field.name] ? `${field.name}-error` : undefined} onChange={e => update(field.name, e.target.value)} />
+          : <input name={field.name} required={!field.optional} data-max={field.max} type={field.type || 'text'} autoComplete={autocomplete[field.name] || 'off'} value={draft[field.name] || ''} placeholder={field.placeholder} aria-invalid={!!errors[field.name] || undefined} aria-describedby={errors[field.name] ? `${field.name}-error` : undefined} onChange={e => update(field.name, e.target.value)} />}
         {errors[field.name] && <span id={`${field.name}-error`} className="auth-field-error">{errors[field.name]}</span>}
+        {field.max && !errors[field.name] && <CharCount value={draft[field.name]} max={field.max} always={field.type === 'textarea'} />}
       </label>)}
       {slug === 'code' && <><VerificationCode value={code} onChange={value => { setCode(value); setErrors(current => ({ ...current, code: '' })) }} invalid={!!errors.code} />{errors.code && <p id="code-error" className="auth-field-error">{errors.code}</p>}<p id="verification-note" className="auth-note">We emailed a 6-digit code. It expires after 10 minutes.</p>{env.showDemoOtp && draft.demoOtp && <p role="status" className="auth-alert" data-tone="status"><CheckCircle2 size={16} aria-hidden />Email delivery is unavailable on this deployment. Your demo code: <strong>{draft.demoOtp}</strong></p>}</>}
       {slug === 'password' && <>

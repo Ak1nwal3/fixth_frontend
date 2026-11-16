@@ -274,13 +274,31 @@ export interface ApiSignInResponse {
 }
 
 /** Extract a human-readable message from a DRF error body. */
+/** "stipend_amount" → "Stipend amount". */
+function fieldLabel(key: string): string {
+  const text = key.replace(/_/g, ' ').trim()
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
+
+/**
+ * The most useful single message in an API error body. Field errors are
+ * prefixed with the field name ("Portfolio: Enter a valid URL.") so the
+ * message still makes sense away from the field it belongs to.
+ */
 export function apiErrorMessage(body: unknown, fallback: string): string {
   if (body && typeof body === 'object') {
     const detail = (body as { detail?: unknown }).detail
     if (typeof detail === 'string' && detail) return detail
-    for (const value of Object.values(body)) {
-      if (Array.isArray(value) && typeof value[0] === 'string') return value[0]
-      if (typeof value === 'string' && value) return value
+    for (const [key, raw] of Object.entries(body)) {
+      // Nested `{ errors: { field: [...] } }` (password reset) and plain lists.
+      if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+        const nested = apiErrorMessage(raw, '')
+        if (nested) return nested
+        continue
+      }
+      const value = Array.isArray(raw) ? raw[0] : raw
+      if (typeof value !== 'string' || !value) continue
+      return key === 'non_field_errors' ? value : `${fieldLabel(key)}: ${value}`
     }
   }
   return fallback

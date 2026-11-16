@@ -71,8 +71,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signIn = useCallback(async (role: AuthRole, email: string, password: string) => {
+    const previous = getSession()
     const response = await apiSignIn(role, email, password)
     setSession({ role, access: response.access, refresh: response.refresh, user: response.user })
+    // Switching accounts (e.g. organization → student): the old session is
+    // replaced, so revoke its refresh token too. Best effort.
+    if (previous && previous.refresh !== response.refresh) {
+      void apiSignOut(previous.role, previous.refresh).catch(() => {})
+    }
     setUser(response.user)
     setStatus('signed-in')
   }, [])

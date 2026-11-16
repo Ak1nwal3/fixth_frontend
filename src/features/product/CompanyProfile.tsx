@@ -14,6 +14,10 @@ import { apiErrorMessage } from '@/services/types'
 import { passwordError } from '@/lib/password'
 import { Avatar, Badge, Panel } from './components/ui'
 import PasswordInput from '@/components/common/PasswordInput'
+import CharCount from '@/components/common/CharCount'
+import { LIMITS, firstOverLimit } from '@/lib/limits'
+
+const INDUSTRIES = ['Technology', 'Engineering', 'Construction', 'Manufacturing', 'Energy', 'Other']
 
 function messageFor(error: unknown, fallback: string) {
   if (error instanceof ApiError) {
@@ -56,7 +60,7 @@ function companyToForm(company: CompanyProfileData): CompanyForm {
 }
 
 export function CompanyProfilePage() {
-  const { user, refreshUser, signOut } = useAuth()
+  const { user, refreshUser, signIn, signOut } = useAuth()
   const navigate = useNavigate()
   // Unedited fields follow the account (e.g. after refreshUser); edits win.
   const [firstNameDraft, setFirstName] = useState<string | null>(null)
@@ -117,6 +121,12 @@ export function CompanyProfilePage() {
   const saveCompany = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!form) return
+    const tooLong = firstOverLimit(event.currentTarget)
+    if (tooLong) {
+      notify(tooLong.message, true)
+      tooLong.element.focus()
+      return
+    }
     setCompanyBusy(true)
     setCompanyNotice(null)
     try {
@@ -188,6 +198,12 @@ export function CompanyProfilePage() {
 
   const saveName = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    const tooLong = firstOverLimit(event.currentTarget)
+    if (tooLong) {
+      setNameMessage(tooLong.message)
+      tooLong.element.focus()
+      return
+    }
     setNameBusy(true)
     setNameMessage('')
     try {
@@ -231,12 +247,27 @@ export function CompanyProfilePage() {
         current_password: currentPassword,
         new_password: newPassword,
       })
+    } catch (error) {
+      setPasswordMessage(messageFor(error, 'Your password could not be updated.'))
+      setPasswordBusy(false)
+      return
+    }
+    // The API revokes every token issued before a password change, so this
+    // tab's session is now dead. Sign straight back in with the new password
+    // so placements and applicants keep loading without a manual re-login.
+    try {
+      if (user?.email) await signIn('organization', user.email, newPassword)
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
-      setPasswordMessage('Password updated. Use it the next time you sign in.')
-    } catch (error) {
-      setPasswordMessage(messageFor(error, 'Your password could not be updated.'))
+      setPasswordMessage('Password updated. You’re still signed in on this device.')
+    } catch {
+      await signOut()
+      navigate('/auth/organization/sign-in', {
+        replace: true,
+        state: { from: '/company/profile' },
+      })
+      return
     } finally {
       setPasswordBusy(false)
     }
@@ -322,19 +353,26 @@ export function CompanyProfilePage() {
                     <span>Company name *</span>
                     <input
                       required
-                      maxLength={150}
+                      data-max={LIMITS.companyName}
                       value={form.name}
                       onChange={event => setForm({ ...form, name: event.target.value })}
                     />
+                    <CharCount value={form.name} max={LIMITS.companyName} />
                   </label>
                   <label className="p-field">
                     <span>Industry</span>
-                    <input
-                      maxLength={120}
-                      value={form.industry}
-                      placeholder="e.g. Technology"
+                    {/* The API only accepts these industries; free text failed on save. */}
+                    <select
+                      value={INDUSTRIES.includes(form.industry) ? form.industry : ''}
                       onChange={event => setForm({ ...form, industry: event.target.value })}
-                    />
+                    >
+                      <option value="" disabled>
+                        Select an industry
+                      </option>
+                      {INDUSTRIES.map(industry => (
+                        <option key={industry}>{industry}</option>
+                      ))}
+                    </select>
                   </label>
                   <label className="p-field">
                     <span>Website</span>
@@ -345,68 +383,77 @@ export function CompanyProfilePage() {
                       inputMode="url"
                       autoComplete="url"
                       placeholder="yourcompany.com"
-                      maxLength={200}
+                      data-max={LIMITS.website}
                       value={form.website}
                       onChange={event => setForm({ ...form, website: event.target.value })}
                     />
+                    <CharCount value={form.website} max={LIMITS.website} />
                   </label>
                   <label className="p-field">
                     <span>Country</span>
                     <input
-                      maxLength={100}
+                      data-max={LIMITS.country}
                       value={form.country}
                       onChange={event => setForm({ ...form, country: event.target.value })}
                     />
+                    <CharCount value={form.country} max={LIMITS.country} />
                   </label>
                   <label className="p-field">
                     <span>City</span>
                     <input
-                      maxLength={100}
+                      data-max={LIMITS.city}
                       value={form.city}
                       onChange={event => setForm({ ...form, city: event.target.value })}
                     />
+                    <CharCount value={form.city} max={LIMITS.city} />
                   </label>
                   <label className="p-field">
                     <span>Registration number</span>
                     <input
-                      maxLength={50}
+                      data-max={LIMITS.registrationNumber}
                       value={form.registrationNumber}
                       onChange={event => setForm({ ...form, registrationNumber: event.target.value })}
                     />
+                    <CharCount value={form.registrationNumber} max={LIMITS.registrationNumber} />
                   </label>
                   <label className="p-field">
                     <span>Primary contact name</span>
                     <input
-                      maxLength={150}
+                      data-max={LIMITS.contactName}
                       value={form.primaryContactName}
                       onChange={event => setForm({ ...form, primaryContactName: event.target.value })}
                     />
+                    <CharCount value={form.primaryContactName} max={LIMITS.contactName} />
                   </label>
                   <label className="p-field">
                     <span>Primary contact title</span>
                     <input
-                      maxLength={100}
+                      data-max={LIMITS.contactTitle}
                       value={form.primaryContactTitle}
                       onChange={event => setForm({ ...form, primaryContactTitle: event.target.value })}
                     />
+                    <CharCount value={form.primaryContactTitle} max={LIMITS.contactTitle} />
                   </label>
                 </div>
                 <label className="p-field">
                   <span>Address</span>
                   <input
-                    maxLength={255}
+                    data-max={LIMITS.address}
                     value={form.address}
                     onChange={event => setForm({ ...form, address: event.target.value })}
                   />
+                  <CharCount value={form.address} max={LIMITS.address} />
                 </label>
                 <label className="p-field">
                   <span>Description</span>
                   <textarea
                     rows={5}
-                    maxLength={2000}
+                    data-max={LIMITS.companyDescription}
                     value={form.description}
+                    aria-invalid={form.description.length > LIMITS.companyDescription || undefined}
                     onChange={event => setForm({ ...form, description: event.target.value })}
                   />
+                  <CharCount value={form.description} max={LIMITS.companyDescription} always />
                 </label>
                 <label className="p-field">
                   <span>Logo</span>
@@ -461,19 +508,21 @@ export function CompanyProfilePage() {
                   <span>First name</span>
                   <input
                     value={firstName}
-                    maxLength={150}
+                    data-max={LIMITS.accountName}
                     autoComplete="given-name"
                     onChange={event => setFirstName(event.target.value)}
                   />
+                  <CharCount value={firstName} max={LIMITS.accountName} />
                 </label>
                 <label className="p-field">
                   <span>Last name</span>
                   <input
                     value={lastName}
-                    maxLength={150}
+                    data-max={LIMITS.accountName}
                     autoComplete="family-name"
                     onChange={event => setLastName(event.target.value)}
                   />
+                  <CharCount value={lastName} max={LIMITS.accountName} />
                 </label>
               </div>
               <label className="p-field">
@@ -498,7 +547,7 @@ export function CompanyProfilePage() {
               <p
                 role="status"
                 className={
-                  passwordMessage === 'Password updated. Use it the next time you sign in.'
+                  passwordMessage.startsWith('Password updated.')
                     ? undefined
                     : 'p-error'
                 }

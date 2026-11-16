@@ -1,5 +1,7 @@
 import { createBrowserRouter, Navigate, Outlet } from 'react-router'
 import RootLayout from '@/components/layout/RootLayout'
+import RouteError from '@/components/layout/RouteError'
+import { HomeGate, StudentAreaGate } from '@/features/auth/RouteGates'
 import RequireCompanyAuth from '@/features/auth/RequireCompanyAuth'
 import RequireStudentAuth from '@/features/auth/RequireStudentAuth'
 import HomePage from '@/features/home/HomePage'
@@ -22,6 +24,7 @@ import {
   ResumePage,
   CompanyPlacementsPage,
   PlacementEditorPage,
+  CompanyPlacementViewPage,
   ApplicantsPage,
   ApplicantReviewPage,
   CompanyProfilePage,
@@ -34,8 +37,11 @@ import {
 } from './pages'
 
 
-export const router = createBrowserRouter([{ path: '/', element: <RootLayout />, children: [
-  { index: true, element: <HomePage /> },
+// Every level has an error screen: a failed page download (flaky network,
+// new deploy) shows a friendly retry instead of React Router's debug page.
+// Workspace-level ones keep the sidebar and header in place.
+export const router = createBrowserRouter([{ path: '/', element: <RootLayout />, errorElement: <RouteError />, children: [
+  { index: true, element: <HomeGate><HomePage /></HomeGate> },
   { path: 'old', element: <LandingPage /> },
   { path: 'onboarding/:track/:step?', element: <OnboardingPage /> },
   { path: 'auth/sign-in', element: <Navigate to="/auth/student/sign-in" replace /> },
@@ -49,7 +55,7 @@ export const router = createBrowserRouter([{ path: '/', element: <RootLayout />,
   // One student layout for public and private pages, so moving between
   // Discover, a placement, and Applications keeps the shell and profile loaded.
   { element: <StudentDataProvider><ProductLayout role="student" /></StudentDataProvider>, children: [
-    { path: 'student', children: [
+    { path: 'student', element: <StudentAreaGate><Outlet /></StudentAreaGate>, errorElement: <RouteError compact />, children: [
       // Public discovery routes: the placements API allows anonymous reads and
       // returns extra fields for signed-in students.
       { index: true, element: <Navigate to="discover" replace /> },
@@ -65,19 +71,20 @@ export const router = createBrowserRouter([{ path: '/', element: <RootLayout />,
         { path: 'resume', element: <ResumePage /> },
       ] },
     ] },
-    { path: 'p/:slug', element: <PlacementDetailPage /> },
+    { path: 'p/:slug', element: <PlacementDetailPage />, errorElement: <RouteError compact /> },
   ] },
-  { path: 'company', element: <RequireCompanyAuth><ProductLayout role="company" /></RequireCompanyAuth>, children: [
+  { path: 'company', element: <RequireCompanyAuth><ProductLayout role="company" /></RequireCompanyAuth>, children: [{ errorElement: <RouteError compact />, children: [
     { index: true, element: <Navigate to="placements" replace /> },
     { path: 'placements', element: <CompanyPlacementsPage /> },
     { path: 'placements/new', element: <PlacementEditorPage key="new" /> },
+    { path: 'placements/:id', element: <CompanyPlacementViewPage /> },
     { path: 'placements/:id/edit', element: <PlacementEditorPage /> },
     { path: 'placements/:id/applicants', element: <ApplicantsPage /> },
     { path: 'placements/:id/applicants/:applicationId', element: <ApplicantReviewPage /> },
     { path: 'applicants', element: <ApplicantsPage /> },
     { path: 'applicants/:applicationId', element: <ApplicantReviewPage /> },
     { path: 'profile', element: <CompanyProfilePage /> },
-  ] },
+  ] }] },
   // The Trust & Safety workspace is an unauthenticated local mock with sample
   // data, so production builds leave it out unless VITE_SHOW_ADMIN_PREVIEW=true.
   ...(env.showAdminPreview ? [{ path: 'admin', element: <AdminWorkspace />, children: [

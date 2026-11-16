@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router'
-import { Clock3, GraduationCap, MapPin, Plus } from 'lucide-react'
+import { Building2, Clock3, GraduationCap, MapPin, Pencil, Plus, Users } from 'lucide-react'
 import { useDebounced } from '@/hooks/useDebounced'
 import { ApiError } from '@/services/http'
 import { apiErrorMessage } from '@/services/types'
@@ -17,6 +17,10 @@ import { getCompanySummary } from '@/services/companies'
 import { Badge, CopyLink, Empty, Metrics, Modal, Panel, Tabs } from './components/ui'
 import { Field, ValidatedForm } from './components/Form'
 import { dateLabel } from './data'
+import Combobox from '@/components/common/Combobox'
+import CharCount from '@/components/common/CharCount'
+import { ENGINEERING_DISCIPLINES, MULTI_DISCIPLINE, decodeDisciplines, disciplineLabel, encodeDisciplines } from '@/lib/disciplines'
+import { LIMITS, lengthError } from '@/lib/limits'
 
 const PAGE_SIZE = 20
 
@@ -272,71 +276,60 @@ export function CompanyPlacementsPage() {
             <p role="status">Loading placements…</p>
           ) : items.length ? (
             <>
-              <div className="p-table-wrap">
-                <table role="table">
-                  <thead>
-                    <tr>
-                      <th scope="col">Placement</th>
-                      <th scope="col">Status</th>
-                      <th scope="col">Created</th>
-                      <th scope="col">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map(placement => (
-                      <tr key={placement.id}>
-                        <td data-label="Placement">
-                          <strong>{placement.title}</strong>
-                          <small>
-                            {placement.discipline} · {placement.location}
-                          </small>
-                          <small>
-                            <MapPin aria-hidden size={12} /> {placement.workStyle} ·{' '}
-                            <Clock3 aria-hidden size={12} /> {placement.duration} ·{' '}
-                            <GraduationCap aria-hidden size={12} /> {placement.level}L+
-                          </small>
-                        </td>
-                        <td data-label="Status">
-                          <Badge>{placement.status}</Badge>
-                        </td>
-                        <td data-label="Created">{dateLabel(placement.createdAt)}</td>
-                        <td>
-                          <div className="p-row-actions">
-                            <Link
-                              to={`/company/placements/${placement.id}/applicants`}
-                              state={{ from: '/company/placements' }}
-                              className="p-button subtle"
-                            >
-                              View applicants
-                            </Link>
-                            <Link
-                              to={`/company/placements/${placement.id}/edit`}
-                              className="p-button subtle"
-                            >
-                              Edit
-                            </Link>
-                            {placement.status === 'Active' && (
-                              <>
-                                <CopyLink slug={placement.slug} title={placement.title} />
-                                <button
-                                  type="button"
-                                  className="p-button secondary"
-                                  onClick={() => {
-                                    setActionError('')
-                                    setClosing(placement)
-                                  }}
-                                >
-                                  Close<span className="p-sr"> {placement.title}</span>
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <ul className="p-listing-cards">
+                {items.map(placement => (
+                  <li key={placement.id} className="p-listing-card">
+                    <div className="p-listing-main">
+                      <div className="p-listing-title">
+                        <h3>
+                          <Link to={`/company/placements/${placement.id}`}>{placement.title}</Link>
+                        </h3>
+                        <Badge>{placement.status}</Badge>
+                      </div>
+                      <p className="p-listing-sub">
+                        {disciplineLabel(placement.discipline) || 'Discipline not set'}
+                        <span aria-hidden> · </span>
+                        Created {dateLabel(placement.createdAt)}
+                      </p>
+                      <ul className="p-listing-meta" aria-label="Placement details">
+                        <li><MapPin aria-hidden size={13} />{placement.location || 'Location not set'}</li>
+                        <li><Building2 aria-hidden size={13} />{placement.workStyle}</li>
+                        <li><Clock3 aria-hidden size={13} />{placement.duration || 'Duration not set'}</li>
+                        <li><GraduationCap aria-hidden size={13} />{placement.level}L+</li>
+                      </ul>
+                    </div>
+                    <div className="p-listing-actions">
+                      <Link
+                        to={`/company/placements/${placement.id}/applicants`}
+                        state={{ from: '/company/placements' }}
+                        className="p-button subtle"
+                      >
+                        <Users aria-hidden size={14} />
+                        Applicants
+                      </Link>
+                      <Link to={`/company/placements/${placement.id}/edit`} className="p-button secondary">
+                        <Pencil aria-hidden size={14} />
+                        Edit
+                      </Link>
+                      {placement.status === 'Active' && (
+                        <>
+                          <CopyLink slug={placement.slug} title={placement.title} />
+                          <button
+                            type="button"
+                            className="p-button secondary"
+                            onClick={() => {
+                              setActionError('')
+                              setClosing(placement)
+                            }}
+                          >
+                            Close<span className="p-sr"> {placement.title}</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
               {moreError && <p role="alert" className="p-error">{moreError}</p>}
               {hasMore && (
                 <button
@@ -511,11 +504,11 @@ function PlacementEditor({ id }: { id?: string }) {
   const validate = (publish: boolean) => {
     const errors: Record<string, string> = {}
     if (!form.title.trim()) errors.title = 'Enter a role title.'
-    if (form.discipline && !form.discipline.trim()) errors.discipline = 'Enter an eligible discipline.'
+    if (form.discipline && !form.discipline.trim()) errors.discipline = 'Choose an eligible discipline.'
     if (publish) {
       if (!form.location.trim()) errors.location = 'Enter a location.'
       if (!form.duration.trim()) errors.duration = 'Enter a duration.'
-      if (!form.discipline.trim()) errors.discipline = 'Enter an eligible discipline.'
+      if (!form.discipline.trim()) errors.discipline = 'Choose an eligible discipline.'
       if (!form.description.trim()) errors.description = 'Add a description.'
       if (!form.responsibilities.trim()) errors.responsibilities = 'Add responsibilities.'
       if (!form.requirements.trim()) errors.requirements = 'Add requirements.'
@@ -528,6 +521,17 @@ function PlacementEditor({ id }: { id?: string }) {
       if (!Number.isFinite(stipend) || stipend < 0) {
         errors.stipendAmount = 'Stipend cannot be negative.'
       }
+    }
+    // Length limits apply to drafts too: the API rejects over-long text.
+    const lengths: [keyof CompanyPlacementInput, number][] = [
+      ['title', LIMITS.placementTitle],
+      ['location', LIMITS.placementLocation],
+      ['duration', LIMITS.placementDuration],
+      ['discipline', LIMITS.discipline],
+    ]
+    for (const [key, max] of lengths) {
+      const tooLong = lengthError(String(form[key] ?? ''), max)
+      if (tooLong && !errors[key]) errors[key] = tooLong
     }
     setFieldErrors(errors)
     return !Object.keys(errors).length
@@ -654,12 +658,13 @@ function PlacementEditor({ id }: { id?: string }) {
             <input
               name="title"
               required
-              maxLength={200}
+              data-max={LIMITS.placementTitle}
               value={form.title}
               onChange={event => update('title', event.target.value)}
-              aria-invalid={!!fieldErrors.title || undefined}
+              aria-invalid={!!fieldErrors.title || form.title.length > LIMITS.placementTitle || undefined}
             />
-            {fieldErrors.title && <span className="p-error">{fieldErrors.title}</span>}
+            {fieldErrors.title && !lengthError(form.title, LIMITS.placementTitle) && <span className="p-error">{fieldErrors.title}</span>}
+            <CharCount value={form.title} max={LIMITS.placementTitle} />
           </Field>
           {(['description', 'responsibilities', 'requirements'] as const).map(key => (
             <Field className="p-field" key={key}>
@@ -682,20 +687,38 @@ function PlacementEditor({ id }: { id?: string }) {
             </Field>
           ))}
           <div className="p-form-grid">
-            <Field className="p-field">
-              <span>Eligible discipline *</span>
-              <input
-                name="discipline"
-                required
-                value={form.discipline}
-                placeholder="e.g. Computer Engineering"
-                onChange={event => update('discipline', event.target.value)}
-                aria-invalid={!!fieldErrors.discipline || undefined}
-              />
+            <div className="p-field">
+              <label htmlFor="placement-discipline">
+                {MULTI_DISCIPLINE ? 'Eligible disciplines *' : 'Eligible discipline *'}
+              </label>
+              {MULTI_DISCIPLINE ? (
+                <Combobox
+                  multiple
+                  id="placement-discipline"
+                  name="discipline"
+                  options={ENGINEERING_DISCIPLINES}
+                  value={decodeDisciplines(form.discipline)}
+                  onChange={values => update('discipline', encodeDisciplines(values))}
+                  placeholder="Search disciplines, e.g. Civil"
+                  invalid={!!fieldErrors.discipline}
+                  pickMessage="Choose a discipline from the list."
+                />
+              ) : (
+                <Combobox
+                  id="placement-discipline"
+                  name="discipline"
+                  options={ENGINEERING_DISCIPLINES}
+                  value={form.discipline}
+                  onChange={value => update('discipline', value)}
+                  placeholder="Search disciplines, e.g. Civil"
+                  invalid={!!fieldErrors.discipline}
+                  pickMessage="Choose a discipline from the list."
+                />
+              )}
               {fieldErrors.discipline && (
                 <span className="p-error">{fieldErrors.discipline}</span>
               )}
-            </Field>
+            </div>
             <Field className="p-field">
               <span>Academic level requirement *</span>
               <select
@@ -715,11 +738,14 @@ function PlacementEditor({ id }: { id?: string }) {
               <input
                 name="location"
                 required={requireComplete}
+                data-max={LIMITS.placementLocation}
                 value={form.location}
+                placeholder="e.g. Lekki, Lagos"
                 onChange={event => update('location', event.target.value)}
-                aria-invalid={!!fieldErrors.location || undefined}
+                aria-invalid={!!fieldErrors.location || form.location.length > LIMITS.placementLocation || undefined}
               />
-              {fieldErrors.location && <span className="p-error">{fieldErrors.location}</span>}
+              {fieldErrors.location && !lengthError(form.location, LIMITS.placementLocation) && <span className="p-error">{fieldErrors.location}</span>}
+              <CharCount value={form.location} max={LIMITS.placementLocation} />
             </Field>
             <Field className="p-field">
               <span>Work style *</span>
@@ -738,12 +764,18 @@ function PlacementEditor({ id }: { id?: string }) {
               <input
                 name="duration"
                 required={requireComplete}
+                data-max={LIMITS.placementDuration}
+                list="placement-durations"
                 value={form.duration}
                 placeholder="e.g. 6 months"
                 onChange={event => update('duration', event.target.value)}
-                aria-invalid={!!fieldErrors.duration || undefined}
+                aria-invalid={!!fieldErrors.duration || form.duration.length > LIMITS.placementDuration || undefined}
               />
-              {fieldErrors.duration && <span className="p-error">{fieldErrors.duration}</span>}
+              <datalist id="placement-durations">
+                {['3 months', '4 months', '6 months', '12 months'].map(option => <option key={option} value={option} />)}
+              </datalist>
+              {fieldErrors.duration && !lengthError(form.duration, LIMITS.placementDuration) && <span className="p-error">{fieldErrors.duration}</span>}
+              <CharCount value={form.duration} max={LIMITS.placementDuration} />
             </Field>
             <Field className="p-field">
               <span>Monthly stipend (NGN) · optional</span>
@@ -828,7 +860,7 @@ function PlacementEditor({ id }: { id?: string }) {
               <Badge>{editing ? serverStatus : 'Draft'}</Badge>
             </div>
             <p>
-              {form.discipline || 'Discipline'} · {form.level}L+ · {form.location || 'Location'}
+              {disciplineLabel(form.discipline) || 'Discipline'} · {form.level}L+ · {form.location || 'Location'}
             </p>
             <p>
               {form.workStyle} · {form.duration || 'Duration'} ·{' '}
@@ -846,6 +878,140 @@ function PlacementEditor({ id }: { id?: string }) {
           </div>
         </Modal>
       )}
+      </div>
+    </>
+  )
+}
+
+/** Keyed by placement so moving between listings never shows stale details. */
+export function CompanyPlacementViewPage() {
+  const { id } = useParams()
+  return <CompanyPlacementView key={id} id={id ?? ''} />
+}
+
+/**
+ * The organization's own read-only view of a listing, inside the company
+ * workspace. Organizations never land on the student pages to check how a
+ * listing reads; the public student link is only offered to copy and share.
+ */
+function CompanyPlacementView({ id }: { id: string }) {
+  const [placement, setPlacement] = useState<StudentPlacement | null>(null)
+  const [error, setError] = useState('')
+  const [notFound, setNotFound] = useState(false)
+  const [attempt, setAttempt] = useState(0)
+
+  useEffect(() => {
+    let live = true
+    getCompanyPlacement(id)
+      .then(result => {
+        if (live) setPlacement(result)
+      })
+      .catch(err => {
+        if (!live) return
+        if (err instanceof ApiError && err.status === 404) setNotFound(true)
+        else setError(errorText(err, 'The placement could not be loaded.'))
+      })
+    return () => {
+      live = false
+    }
+  }, [id, attempt])
+
+  if (notFound) {
+    return (
+      <Panel>
+        <Empty title="Placement not found">
+          <p>It may have been removed, or it belongs to another organization.</p>
+          <Link to="/company/placements" className="p-button">
+            Back to listings
+          </Link>
+        </Empty>
+      </Panel>
+    )
+  }
+  if (error) {
+    return (
+      <Panel>
+        <Empty title="Placement could not be loaded">
+          <p>{error}</p>
+          <button
+            type="button"
+            className="p-button"
+            onClick={() => {
+              setError('')
+              setAttempt(value => value + 1)
+            }}
+          >
+            Try again
+          </button>
+        </Empty>
+      </Panel>
+    )
+  }
+  if (!placement) return <Panel><p role="status">Loading placement…</p></Panel>
+
+  const stipend = placement.stipendAmount
+    ? `${placement.currency === 'NGN' || !placement.currency ? '₦' : `${placement.currency} `}${Number(placement.stipendAmount).toLocaleString()} / month`
+    : 'Not specified'
+  const sections: [string, string][] = [
+    ['Description', placement.description],
+    ['Responsibilities', placement.responsibilities],
+    ['Requirements', placement.requirements],
+  ]
+
+  return (
+    <>
+      <Link to="/company/placements" className="p-text-link">
+        ← Back to placements
+      </Link>
+      <div className="p-columns">
+        <Panel className="p-article">
+          <div className="p-listing-title">
+            <h2>{placement.title}</h2>
+            <Badge>{placement.status}</Badge>
+          </div>
+          <ul className="p-listing-meta" aria-label="Placement details">
+            <li><GraduationCap aria-hidden size={13} />{disciplineLabel(placement.discipline) || 'Discipline not set'}</li>
+            <li><MapPin aria-hidden size={13} />{placement.location || 'Location not set'}</li>
+            <li><Building2 aria-hidden size={13} />{placement.workStyle}</li>
+            <li><Clock3 aria-hidden size={13} />{placement.duration || 'Duration not set'}</li>
+            <li><GraduationCap aria-hidden size={13} />{placement.level} level and above</li>
+          </ul>
+          {sections.map(([heading, text]) => (
+            <section key={heading}>
+              <h3>{heading}</h3>
+              <p className="p-prewrap">{text || `No ${heading.toLowerCase()} yet.`}</p>
+            </section>
+          ))}
+        </Panel>
+        <aside className="p-stack">
+          <Panel className="tinted">
+            <p className="p-eyebrow">Manage listing</p>
+            <dl className="p-definition">
+              <div><dt>Status</dt><dd>{placement.status}</dd></div>
+              <div><dt>Monthly stipend</dt><dd>{stipend}</dd></div>
+              <div><dt>Created</dt><dd>{dateLabel(placement.createdAt)}</dd></div>
+              {placement.publishedAt && <div><dt>Published</dt><dd>{dateLabel(placement.publishedAt)}</dd></div>}
+            </dl>
+            <div className="p-stack">
+              <Link
+                to={`/company/placements/${placement.id}/applicants`}
+                state={{ from: `/company/placements/${placement.id}` }}
+                className="p-button"
+              >
+                <Users aria-hidden size={15} />
+                View applicants
+              </Link>
+              <Link to={`/company/placements/${placement.id}/edit`} className="p-button secondary">
+                <Pencil aria-hidden size={15} />
+                Edit placement
+              </Link>
+              {placement.status === 'Active' && <CopyLink slug={placement.slug} title={placement.title} />}
+            </div>
+            {placement.status === 'Active' && (
+              <p className="p-small">Share the copied link with students. It opens the public listing.</p>
+            )}
+          </Panel>
+        </aside>
       </div>
     </>
   )

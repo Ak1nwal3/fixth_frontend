@@ -1,7 +1,12 @@
 import { Field, ValidatedForm } from './components/Form'
 import { fileSizeLabel, fileTypeLabel, shortenFileName } from '@/lib/files';
 import { useState, useEffect, type SubmitEvent, type ChangeEvent } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
+import Combobox from '@/components/common/Combobox';
+import CharCount from '@/components/common/CharCount';
+import { ENGINEERING_DISCIPLINES } from '@/lib/disciplines';
+import { NIGERIAN_UNIVERSITIES } from '@/lib/universities';
+import { LIMITS, lengthError } from '@/lib/limits';
 import { FileText, Upload, Pencil, ShieldCheck } from 'lucide-react';
 import { initials, dateLabel } from './data';
 import { useStudentData } from './useStudentData';
@@ -14,12 +19,18 @@ import { downloadDocument } from '@/services/documents';
 import { MAX_PHOTO_BYTES, deleteStudentAccount, deleteStudentPhoto, submitStudentVerification, uploadStudentPhoto } from '@/services/studentMedia';
 import { Avatar, Badge, Panel, Modal } from './components/ui';
 
+/** Opens the editor focused on one field, so "Add" goes straight to it. */
+function AddLink({ field, label }: { field: string; label: string }) {
+    return <Link className="p-add-link" to={`/student/profile/edit?field=${field}`} aria-label={`Add ${label.toLowerCase()}`}><Pencil size={12} aria-hidden />Add</Link>;
+}
+
 function Details({ items }: {
-    items: [
-        string,
-        string
-    ][];
-}) { return <dl className="p-definition">{items.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || 'Not provided'}</dd></div>)}</dl>; }
+    items: [label: string, value: string, field: string][];
+}) {
+    return <dl className="p-definition">{items.map(([label, value, field]) => <div key={label}><dt>{label}</dt><dd>{value
+        ? field === 'portfolio' ? <a className="p-text-link" href={value} target="_blank" rel="noopener noreferrer">{value.replace(/^https?:\/\//, '')}</a> : value
+        : <><span className="p-muted">Not provided</span> <AddLink field={field} label={label} /></>}</dd></div>)}</dl>;
+}
 
 function ProfileStatus() {
     const { status, error, reload } = useStudentData();
@@ -68,7 +79,7 @@ export function ProfilePage() {
             setDeleteError(error instanceof ApiError ? apiErrorMessage(error.body, 'Your account could not be deleted. Try again.') : 'Could not reach the server. Try again.');
         }
     };
-    return <div className="p-columns"><Panel><div className="p-between"><div className="p-identity"><Avatar className="large" src={profile.photo?.url} fallback={initials(name)} /><div><h2>{name}</h2><p>{profile.discipline || 'Add your discipline'} student {profile.verificationStatus === 'Verified' && <ShieldCheck size={14} className="p-inline-success" aria-hidden/>}</p></div></div><Link to="/student/profile/edit" className="p-button"><Pencil size={14} aria-hidden/>Edit profile</Link></div><div className="p-profile-contact"><div><small>Email</small><p>{profile.email || 'Not provided'}</p></div><div><small>Location</small><p>{profile.location || 'Not provided'}</p></div><div><small>Phone</small><p>{profile.phone || 'Not provided'}</p></div></div><h3>Education</h3><Details items={[['Institution', profile.institution], ['Discipline', profile.discipline], ['Academic level', `${profile.level} level`], ['Graduation year', profile.graduationYear ? String(profile.graduationYear) : '']]}/><h3>Placement preferences</h3><Details items={[['Duration', profile.duration], ['Work type', profile.workStyles.join(' · ')]]}/><h3>Skills</h3><Details items={[['Core skills', profile.skills.join(' · ')], ['Interests', profile.interests], ['Portfolio', profile.portfolio]]}/></Panel><aside className="p-stack"><Panel><div className="p-between"><h2>Profile strength</h2><strong className="p-text-link">{profile.profileStrength}%</strong></div><progress aria-label="Profile completion" max={100} value={profile.profileStrength}/><p>Add a portfolio link and active resume to complete your profile.</p></Panel><Panel className="tinted"><p className="p-eyebrow">Active resume</p><h2 className="file-name" title={profile.resume?.original_name}>{profile.resume ? shortenFileName(profile.resume.original_name, 40) : 'No active resume'}</h2><Link className="p-text-link" to="/student/resume">Manage or replace resume →</Link></Panel><Panel className="tinted"><p className="p-eyebrow">Verification</p><div className="p-between"><h2>{profile.verificationStatus === 'Verified' ? 'You are verified' : 'Account verification'}</h2><Badge tone={verificationTone}>{profile.verificationStatus}</Badge></div>{profile.verificationStatus === 'Verified' ? <p className="p-small">A verified badge appears next to your profile for companies that receive your applications.</p> : profile.verificationStatus === 'Pending' ? <><p className="p-small">Your profile is in the review queue. We will let you know when a decision is made.</p>{verificationMessage && <p role={verificationMessage.error ? 'alert' : 'status'} className={verificationMessage.error ? 'p-error' : 'p-small'}>{verificationMessage.text}</p>}</> : <><p className="p-small">{profile.verificationStatus === 'Rejected' ? 'Your last submission was rejected. You can submit your profile for review again.' : 'Submit your profile for review. No extra documents are required — the review uses your current profile.'}</p>{verificationMessage && <p role={verificationMessage.error ? 'alert' : 'status'} className={verificationMessage.error ? 'p-error' : 'p-small'}>{verificationMessage.text}</p>}<button type="button" className="p-button" disabled={verificationBusy} onClick={submitVerification}>{verificationBusy ? 'Submitting…' : profile.verificationStatus === 'Rejected' ? 'Submit again' : 'Submit for review'}</button></>}</Panel><Panel><h2>Account settings</h2><button type="button" className="p-danger-link" onClick={() => !deleting && setConfirm(true)}>Delete account and data</button></Panel></aside>{confirm && <Modal title="Delete your account?" onClose={() => !deleting && setConfirm(false)}><p>This permanently deletes your profile, saved placements, and personal data. Applications that companies must keep for their records are retained without your personal details. You will be signed out and cannot undo this.</p>{deleteError && <p role="alert" className="p-error">{deleteError}</p>}<div className="p-actions"><button type="button" className="p-button secondary" disabled={deleting} onClick={() => setConfirm(false)}>Keep my account</button><button type="button" className="p-button" disabled={deleting} onClick={deleteAccount}>{deleting ? 'Deleting…' : 'Delete account'}</button></div></Modal>}</div>;
+    return <div className="p-columns"><Panel><div className="p-between"><div className="p-identity"><Avatar className="large" src={profile.photo?.url} fallback={initials(name)} /><div><h2>{name}</h2><p>{profile.discipline || 'Add your discipline'} student {profile.verificationStatus === 'Verified' && <ShieldCheck size={14} className="p-inline-success" aria-hidden/>}</p></div></div><Link to="/student/profile/edit" className="p-button"><Pencil size={14} aria-hidden/>Edit profile</Link></div><div className="p-profile-contact"><div><small>Email</small><p>{profile.email || 'Not provided'}</p></div><div><small>Location</small><p>{profile.location || <AddLink field="location" label="Location" />}</p></div><div><small>Phone</small><p>{profile.phone || <AddLink field="phone" label="Phone" />}</p></div></div><h3>Education</h3><Details items={[['Institution', profile.institution, 'institution'], ['Discipline', profile.discipline, 'discipline'], ['Academic level', profile.level ? `${profile.level} level` : '', 'level'], ['Graduation year', profile.graduationYear ? String(profile.graduationYear) : '', 'graduation'], ['Student ID', profile.studentId, 'studentId']]}/><h3>Placement preferences</h3><Details items={[['Duration', profile.duration, 'duration'], ['Work type', profile.workStyles.join(' · '), 'workStyle']]}/><h3>Skills</h3><Details items={[['Core skills', profile.skills.join(' · '), 'skills'], ['Interests', profile.interests, 'interests'], ['Portfolio', profile.portfolio, 'portfolio']]}/></Panel><aside className="p-stack"><Panel><div className="p-between"><h2>Profile strength</h2><strong className="p-text-link">{profile.profileStrength}%</strong></div><progress aria-label="Profile completion" max={100} value={profile.profileStrength}/><p>Add a portfolio link and active resume to complete your profile.</p></Panel><Panel className="tinted"><p className="p-eyebrow">Active resume</p><h2 className="file-name" title={profile.resume?.original_name}>{profile.resume ? shortenFileName(profile.resume.original_name, 40) : 'No active resume'}</h2><Link className="p-text-link" to="/student/resume">Manage or replace resume →</Link></Panel><Panel className="tinted"><p className="p-eyebrow">Verification</p><div className="p-between"><h2>{profile.verificationStatus === 'Verified' ? 'You are verified' : 'Account verification'}</h2><Badge tone={verificationTone}>{profile.verificationStatus}</Badge></div>{profile.verificationStatus === 'Verified' ? <p className="p-small">A verified badge appears next to your profile for companies that receive your applications.</p> : profile.verificationStatus === 'Pending' ? <><p className="p-small">Your profile is in the review queue. We will let you know when a decision is made.</p>{verificationMessage && <p role={verificationMessage.error ? 'alert' : 'status'} className={verificationMessage.error ? 'p-error' : 'p-small'}>{verificationMessage.text}</p>}</> : <><p className="p-small">{profile.verificationStatus === 'Rejected' ? 'Your last submission was rejected. You can submit your profile for review again.' : 'Submit your profile for review. No extra documents are required — the review uses your current profile.'}</p>{verificationMessage && <p role={verificationMessage.error ? 'alert' : 'status'} className={verificationMessage.error ? 'p-error' : 'p-small'}>{verificationMessage.text}</p>}<button type="button" className="p-button" disabled={verificationBusy} onClick={submitVerification}>{verificationBusy ? 'Submitting…' : profile.verificationStatus === 'Rejected' ? 'Submit again' : 'Submit for review'}</button></>}</Panel><Panel><h2>Account settings</h2><button type="button" className="p-danger-link" onClick={() => !deleting && setConfirm(true)}>Delete account and data</button></Panel></aside>{confirm && <Modal title="Delete your account?" onClose={() => !deleting && setConfirm(false)}><p>This permanently deletes your profile, saved placements, and personal data. Applications that companies must keep for their records are retained without your personal details. You will be signed out and cannot undo this.</p>{deleteError && <p role="alert" className="p-error">{deleteError}</p>}<div className="p-actions"><button type="button" className="p-button secondary" disabled={deleting} onClick={() => setConfirm(false)}>Keep my account</button><button type="button" className="p-button" disabled={deleting} onClick={deleteAccount}>{deleting ? 'Deleting…' : 'Delete account'}</button></div></Modal>}</div>;
 }
 
 interface EditableProfile {
@@ -80,6 +91,34 @@ interface EditableProfile {
 function splitList(value: string): string[] {
     return value.split(/[·,]/).map(item => item.trim()).filter(Boolean);
 }
+
+const WORK_STYLES = ['On-site', 'Hybrid', 'Remote'];
+const LEVELS = [100, 200, 300, 400, 500, 600, 700];
+const DURATIONS = ['3 months', '4 months', '6 months', '12 months'];
+
+/** Accepts "mysite.com" as well as a full link; the API needs http(s)://. */
+function normalizeUrl(value: string): string {
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
+function urlError(value: string): string {
+    if (!value.trim()) return '';
+    try {
+        const url = new URL(normalizeUrl(value));
+        return url.hostname.includes('.') ? '' : 'Enter a full link, such as yoursite.com or github.com/you.';
+    } catch {
+        return 'Enter a full link, such as yoursite.com or github.com/you.';
+    }
+}
+
+/** Soft limits for the plain text fields, matching the API. */
+const FIELD_LIMITS: Partial<Record<keyof EditableProfile, number>> = {
+    firstName: LIMITS.studentFirstName, lastName: LIMITS.studentLastName, phone: LIMITS.phone,
+    location: LIMITS.studentLocation, institution: LIMITS.institution, discipline: LIMITS.discipline,
+    studentId: LIMITS.studentId, duration: LIMITS.studentDuration, portfolio: LIMITS.portfolio,
+};
 
 /** Maps API validation error fields back to the camelCase form field names. */
 const apiFieldNames: Record<string, keyof EditableProfile> = {
@@ -98,6 +137,15 @@ export function EditProfilePage() {
     const [errors, setErrors] = useState<Partial<Record<keyof EditableProfile, string>>>({});
     const [photoBusy, setPhotoBusy] = useState(false);
     const [photoError, setPhotoError] = useState('');
+    const [searchParams] = useSearchParams();
+    const focusField = searchParams.get('field');
+    // "Add" links on the profile open the editor on that field.
+    useEffect(() => {
+        if (status !== 'ready' || !focusField) return;
+        const target = document.getElementById(`profile-${focusField}`);
+        target?.scrollIntoView({ block: 'center' });
+        target?.focus({ preventScroll: true });
+    }, [status, focusField]);
     if (status !== 'ready' || !profile) return <ProfileStatus />;
     const current: EditableProfile = form ?? {
         firstName: profile.firstName, lastName: profile.lastName, email: profile.email, phone: profile.phone,
@@ -121,11 +169,13 @@ export function EditProfilePage() {
     }[] = [
         { name: 'firstName', label: 'First name', required: true }, { name: 'lastName', label: 'Last name', required: true },
         { name: 'email', label: 'Email address', type: 'email', disabled: true, hint: 'Email changes are not available yet.' }, { name: 'phone', label: 'Phone number', type: 'tel' }, { name: 'location', label: 'Location', required: true },
-        { name: 'institution', label: 'Institution', required: true }, { name: 'discipline', label: 'Discipline', required: true }, { name: 'level', label: 'Academic level', type: 'number', required: true },
         { name: 'graduation', label: 'Graduation year', type: 'number' }, { name: 'studentId', label: 'Student ID' },
-        { name: 'duration', label: 'Preferred duration' }, { name: 'workStyle', label: 'Work type' }, { name: 'portfolio', label: 'Portfolio link', type: 'url' },
-        { name: 'skills', label: 'Core skills' }, { name: 'interests', label: 'Interests' },
+        { name: 'duration', label: 'Preferred duration', hint: 'For example 6 months.' }, { name: 'portfolio', label: 'Portfolio link', hint: 'Your website, GitHub, Behance, or LinkedIn. https:// is added for you.' },
+        { name: 'skills', label: 'Core skills', hint: 'Separate skills with commas.' }, { name: 'interests', label: 'Interests' },
     ];
+    const selectedStyles = splitList(current.workStyle);
+    const toggleStyle = (style: string) => update('workStyle', (selectedStyles.includes(style) ? selectedStyles.filter(item => item !== style) : [...selectedStyles, style]).join(' · '));
+    const fieldError = (name: keyof EditableProfile) => errors[name] && <span role="alert" className="p-error">{errors[name]}</span>;
     const onPhotoSelect = async (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         event.target.value = '';
@@ -161,13 +211,27 @@ export function EditProfilePage() {
     const submit = async (event: SubmitEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (busy) return;
+        const problems: Partial<Record<keyof EditableProfile, string>> = {};
+        for (const [key, max] of Object.entries(FIELD_LIMITS) as [keyof EditableProfile, number][]) {
+            const tooLong = lengthError(String(current[key] ?? ''), max);
+            if (tooLong) problems[key] = tooLong;
+        }
+        const badUrl = urlError(current.portfolio);
+        if (badUrl) problems.portfolio = badUrl;
+        if (!current.discipline.trim()) problems.discipline = 'Choose your discipline from the list.';
+        if (Object.keys(problems).length) {
+            setErrors(problems);
+            setMessage('Review the highlighted fields.');
+            document.getElementById(`profile-${Object.keys(problems)[0]}`)?.focus();
+            return;
+        }
         const patch: StudentProfilePatch = {
             firstName: current.firstName, lastName: current.lastName, phone: current.phone,
             location: current.location, institution: current.institution, discipline: current.discipline,
             level: Number(current.level),
             graduationYear: current.graduation ? Number(current.graduation) : null,
             studentId: current.studentId, duration: current.duration,
-            workStyles: splitList(current.workStyle), portfolio: current.portfolio,
+            workStyles: splitList(current.workStyle), portfolio: normalizeUrl(current.portfolio),
             skills: splitList(current.skills), interests: current.interests,
         };
         setBusy(true);
@@ -197,7 +261,12 @@ export function EditProfilePage() {
             setBusy(false);
         }
     };
-    return <div className="p-columns"><Panel><div className="p-between"><h2>Profile information</h2><Badge tone="neutral">{form === null ? 'Saved' : 'Unsaved changes'}</Badge></div><p>Required fields help determine placement eligibility.</p><ValidatedForm className="p-form" onSubmit={submit}><div className="p-identity"><Avatar className="large" src={profile.photo?.url} fallback={initials(`${current.firstName} ${current.lastName}`)} /><Field className="p-field"><span>Change photo</span><input type="file" name="photo" accept="image/png,image/jpeg,image/webp" disabled={photoBusy} onChange={onPhotoSelect} aria-describedby="photo-note" /><span id="photo-note" className="p-small">PNG, JPEG, or WebP · Maximum 2 MB.</span>{profile.photo && <button type="button" className="p-danger-link" disabled={photoBusy} onClick={removePhoto}>Remove photo</button>}</Field>{photoError && <p role="alert" className="p-error">{photoError}</p>}</div><div className="p-form-grid">{fields.map(field => <Field className="p-field" key={field.name}><span>{field.label}{field.required ? ' *' : ''}</span><input name={field.name} type={field.type || 'text'} required={field.required} disabled={field.disabled} value={current[field.name] ?? ''} min={field.name === 'level' ? 100 : field.name === 'graduation' ? 2000 : undefined} max={field.name === 'level' ? 700 : field.name === 'graduation' ? 2100 : undefined} step={field.name === 'level' ? 100 : undefined} onChange={e => update(field.name, e.target.value)} autoComplete={field.name === 'firstName' ? 'given-name' : field.name === 'lastName' ? 'family-name' : field.name === 'email' ? 'email' : field.name === 'phone' ? 'tel' : 'off'} aria-invalid={!!errors[field.name] || undefined} />{field.hint && <span className="p-small">{field.hint}</span>}{errors[field.name] && <span role="alert" className="p-error">{errors[field.name]}</span>}</Field>)}</div><p role="alert" className="p-error">{message}</p><div className="p-actions"><button type="submit" className="p-button" disabled={busy || form === null}>{busy ? 'Saving…' : 'Save changes'}</button><Link to="/student/profile" className="p-button secondary">Cancel</Link></div></ValidatedForm></Panel><aside><Panel className="tinted"><p className="p-eyebrow">Why it matters</p><h2>Accurate details improve matches</h2><p>Your discipline, level, and skills determine which placements you’re eligible for.</p></Panel></aside></div>;
+    return <div className="p-columns"><Panel><div className="p-between"><h2>Profile information</h2><Badge tone="neutral">{form === null ? 'Saved' : 'Unsaved changes'}</Badge></div><p>Required fields help determine placement eligibility.</p><ValidatedForm className="p-form" onSubmit={submit}><div className="p-identity"><Avatar className="large" src={profile.photo?.url} fallback={initials(`${current.firstName} ${current.lastName}`)} /><Field className="p-field"><span>Change photo</span><input type="file" name="photo" accept="image/png,image/jpeg,image/webp" disabled={photoBusy} onChange={onPhotoSelect} aria-describedby="photo-note" /><span id="photo-note" className="p-small">PNG, JPEG, or WebP · Maximum 2 MB.</span>{profile.photo && <button type="button" className="p-danger-link" disabled={photoBusy} onClick={removePhoto}>Remove photo</button>}</Field>{photoError && <p role="alert" className="p-error">{photoError}</p>}</div><div className="p-form-grid">{fields.map(field => <Field className="p-field" key={field.name}><span>{field.label}{field.required ? ' *' : ''}</span><input id={`profile-${field.name}`} name={field.name} type={field.type || 'text'} inputMode={field.name === 'portfolio' ? 'url' : undefined} list={field.name === 'duration' ? 'profile-durations' : undefined} required={field.required} disabled={field.disabled} data-max={FIELD_LIMITS[field.name]} value={current[field.name] ?? ''} min={field.name === 'graduation' ? 2000 : undefined} max={field.name === 'graduation' ? 2100 : undefined} onChange={e => update(field.name, e.target.value)} autoComplete={field.name === 'firstName' ? 'given-name' : field.name === 'lastName' ? 'family-name' : field.name === 'email' ? 'email' : field.name === 'phone' ? 'tel' : field.name === 'portfolio' ? 'url' : 'off'} placeholder={field.name === 'portfolio' ? 'yoursite.com' : undefined} aria-invalid={!!errors[field.name] || undefined} />{field.hint && !errors[field.name] && <span className="p-small">{field.hint}</span>}{fieldError(field.name)}{FIELD_LIMITS[field.name] && !errors[field.name] && <CharCount value={String(current[field.name] ?? '')} max={FIELD_LIMITS[field.name]!} />}</Field>)}
+<div className="p-field"><label htmlFor="profile-institution">Institution *</label><Combobox id="profile-institution" name="institution" required allowCustom options={NIGERIAN_UNIVERSITIES} value={current.institution} onChange={value => update('institution', value)} placeholder="Search universities, e.g. Lagos" invalid={!!errors.institution} />{fieldError('institution')}</div>
+<div className="p-field"><label htmlFor="profile-discipline">Discipline *</label><Combobox id="profile-discipline" name="discipline" required options={ENGINEERING_DISCIPLINES} value={current.discipline} onChange={value => update('discipline', value)} placeholder="Search disciplines, e.g. Mechanical" invalid={!!errors.discipline} pickMessage="Choose your discipline from the list." />{fieldError('discipline')}</div>
+<Field className="p-field"><span>Academic level *</span><select id="profile-level" name="level" required value={current.level || ''} onChange={e => update('level', e.target.value)}><option value="" disabled>Select your level</option>{LEVELS.map(level => <option key={level} value={level}>{level} level</option>)}</select>{fieldError('level')}</Field>
+<fieldset className="p-field p-checks" id="profile-workStyle" tabIndex={-1}><legend>Work type</legend><div>{WORK_STYLES.map(style => <label key={style} className="p-check"><input type="checkbox" checked={selectedStyles.includes(style)} onChange={() => toggleStyle(style)} />{style}</label>)}</div>{fieldError('workStyle')}</fieldset>
+<datalist id="profile-durations">{DURATIONS.map(option => <option key={option} value={option} />)}</datalist></div><p role="alert" className="p-error">{message}</p><div className="p-actions"><button type="submit" className="p-button" disabled={busy || form === null}>{busy ? 'Saving…' : 'Save changes'}</button><Link to="/student/profile" className="p-button secondary">Cancel</Link></div></ValidatedForm></Panel><aside><Panel className="tinted"><p className="p-eyebrow">Why it matters</p><h2>Accurate details improve matches</h2><p>Your discipline, level, and skills determine which placements you’re eligible for.</p></Panel></aside></div>;
 }
 
 import { MAX_RESUME_BYTES, deleteStudentResume, getActiveStudentResume, uploadStudentResume } from '@/services/studentMedia';
