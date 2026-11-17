@@ -21,6 +21,7 @@ import Combobox from '@/components/common/Combobox'
 import CharCount from '@/components/common/CharCount'
 import { ENGINEERING_DISCIPLINES, MULTI_DISCIPLINE, decodeDisciplines, disciplineLabel, encodeDisciplines } from '@/lib/disciplines'
 import { LIMITS, lengthError } from '@/lib/limits'
+import { NIGERIAN_LOCATIONS } from '@/lib/locations'
 
 const PAGE_SIZE = 20
 
@@ -733,20 +734,23 @@ function PlacementEditor({ id }: { id?: string }) {
                 ))}
               </select>
             </Field>
-            <Field className="p-field">
-              <span>Location *</span>
-              <input
+            <div className="p-field">
+              <label htmlFor="placement-location">Location *</label>
+              <Combobox
+                id="placement-location"
                 name="location"
                 required={requireComplete}
-                data-max={LIMITS.placementLocation}
+                allowCustom
+                options={NIGERIAN_LOCATIONS}
                 value={form.location}
-                placeholder="e.g. Lekki, Lagos"
-                onChange={event => update('location', event.target.value)}
-                aria-invalid={!!fieldErrors.location || form.location.length > LIMITS.placementLocation || undefined}
+                onChange={value => update('location', value)}
+                placeholder="Search a location, e.g. Lagos"
+                openOnType
+                invalid={!!fieldErrors.location || form.location.length > LIMITS.placementLocation}
               />
               {fieldErrors.location && !lengthError(form.location, LIMITS.placementLocation) && <span className="p-error">{fieldErrors.location}</span>}
               <CharCount value={form.location} max={LIMITS.placementLocation} />
-            </Field>
+            </div>
             <Field className="p-field">
               <span>Work style *</span>
               <select

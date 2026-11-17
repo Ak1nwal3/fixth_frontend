@@ -8,6 +8,9 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
+    // WSL does not deliver file-change events for projects on a Windows
+    // drive (/mnt/c/...), so edits never reached the browser. Poll there.
+    watch: process.cwd().startsWith('/mnt/') ? { usePolling: true, interval: 300 } : undefined,
     proxy: {
       // The backend has no CORS configuration, so dev calls go through this
       // proxy using the default relative `/api/v1` base URL.

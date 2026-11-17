@@ -16,6 +16,8 @@ import { Avatar, Badge, Panel } from './components/ui'
 import PasswordInput from '@/components/common/PasswordInput'
 import CharCount from '@/components/common/CharCount'
 import { LIMITS, firstOverLimit } from '@/lib/limits'
+import Combobox from '@/components/common/Combobox'
+import { COUNTRIES, citiesFor } from '@/lib/locations'
 
 const INDUSTRIES = ['Technology', 'Engineering', 'Construction', 'Manufacturing', 'Energy', 'Other']
 
@@ -389,24 +391,33 @@ export function CompanyProfilePage() {
                     />
                     <CharCount value={form.website} max={LIMITS.website} />
                   </label>
-                  <label className="p-field">
-                    <span>Country</span>
-                    <input
-                      data-max={LIMITS.country}
+                  <div className="p-field">
+                    <label htmlFor="company-country">Country</label>
+                    <Combobox
+                      id="company-country"
+                      name="country"
+                      options={COUNTRIES}
                       value={form.country}
-                      onChange={event => setForm({ ...form, country: event.target.value })}
+                      onChange={country => setForm({ ...form, country })}
+                      placeholder="Search countries, e.g. Nigeria"
+                      pickMessage="Choose a country from the list."
                     />
-                    <CharCount value={form.country} max={LIMITS.country} />
-                  </label>
-                  <label className="p-field">
-                    <span>City</span>
-                    <input
-                      data-max={LIMITS.city}
+                  </div>
+                  <div className="p-field">
+                    <label htmlFor="company-city">City</label>
+                    <Combobox
+                      id="company-city"
+                      name="city"
+                      allowCustom
+                      options={citiesFor(form.country)}
                       value={form.city}
-                      onChange={event => setForm({ ...form, city: event.target.value })}
+                      onChange={city => setForm({ ...form, city })}
+                      placeholder="Search your city, e.g. Lagos"
+                      openOnType
+                      invalid={form.city.length > LIMITS.city}
                     />
                     <CharCount value={form.city} max={LIMITS.city} />
-                  </label>
+                  </div>
                   <label className="p-field">
                     <span>Registration number</span>
                     <input

@@ -14,6 +14,8 @@ interface BaseProps {
   'aria-describedby'?: string
   /** Shown when strict mode rejects typed text. */
   pickMessage?: string
+  /** Keep the list closed until the user types (long lists like locations). */
+  openOnType?: boolean
 }
 
 interface SingleProps extends BaseProps {
@@ -55,7 +57,7 @@ function filterOptions(options: readonly string[], query: string): string[] {
  * students and companies.
  */
 export default function Combobox(props: ComboboxProps) {
-  const { options, name, placeholder, required, disabled, allowCustom, invalid, pickMessage } = props
+  const { options, name, placeholder, required, disabled, allowCustom, invalid, pickMessage, openOnType } = props
   const autoId = useId()
   const inputId = props.id ?? `${autoId}-input`
   const listId = `${autoId}-list`
@@ -83,6 +85,7 @@ export default function Combobox(props: ComboboxProps) {
   const exact = options.find(option => option.toLowerCase() === trimmed.toLowerCase())
   const showCustom = allowCustom && editing && !!trimmed && !exact && !selected.includes(trimmed)
   const items = showCustom ? [...matches, trimmed] : matches
+  const listOpen = open && !disabled && (!openOnType || (editing && !!trimmed))
 
   const commit = (option: string) => {
     setHint('')
@@ -138,7 +141,7 @@ export default function Combobox(props: ComboboxProps) {
       const step = event.key === 'ArrowDown' ? 1 : -1
       setActive(current => (items.length ? (current + step + items.length) % items.length : 0))
     } else if (event.key === 'Enter') {
-      if (open && items[active] !== undefined) {
+      if (listOpen && items[active] !== undefined) {
         event.preventDefault()
         commit(items[active])
       }
@@ -184,9 +187,9 @@ export default function Combobox(props: ComboboxProps) {
           role="combobox"
           autoComplete="off"
           aria-autocomplete="list"
-          aria-expanded={open}
+          aria-expanded={listOpen}
           aria-controls={listId}
-          aria-activedescendant={open && items[active] !== undefined ? `${listId}-${active}` : undefined}
+          aria-activedescendant={listOpen && items[active] !== undefined ? `${listId}-${active}` : undefined}
           aria-invalid={invalid || !!hint || undefined}
           aria-describedby={describedBy}
           placeholder={full ? 'Maximum reached' : placeholder}
@@ -195,8 +198,8 @@ export default function Combobox(props: ComboboxProps) {
           required={!props.multiple && required}
           disabled={disabled || full}
           value={display}
-          onFocus={() => setOpen(true)}
-          onClick={() => setOpen(true)}
+          onFocus={() => !openOnType && setOpen(true)}
+          onClick={() => !openOnType && setOpen(true)}
           onChange={event => {
             setEditing(true)
             setQuery(event.target.value)
@@ -209,7 +212,7 @@ export default function Combobox(props: ComboboxProps) {
         />
         <ChevronDown className="combo-caret" size={16} aria-hidden />
       </span>
-      {open && !disabled && (
+      {listOpen && (
         <ul className="combo-list" id={listId} role="listbox" aria-multiselectable={props.multiple || undefined}>
           {items.length === 0 && <li className="combo-empty">No matches. {allowCustom ? 'Keep typing to use your own entry.' : 'Try another spelling.'}</li>}
           {items.map((option, index) => {

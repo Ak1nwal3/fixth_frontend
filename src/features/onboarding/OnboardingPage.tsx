@@ -18,6 +18,7 @@ import Combobox from '@/components/common/Combobox'
 import CharCount from '@/components/common/CharCount'
 import { ENGINEERING_DISCIPLINES } from '@/lib/disciplines'
 import { NIGERIAN_UNIVERSITIES } from '@/lib/universities'
+import { COUNTRIES, NIGERIAN_LOCATIONS, citiesFor } from '@/lib/locations'
 import { firstOverLimit } from '@/lib/limits'
 
 /** Read from event handlers/effects only, keeping clock access out of render. */
@@ -355,16 +356,18 @@ function OnboardingFlow({ track, slug }: { track: Track; slug: string }) {
           id={`onboarding-${field.name}`}
           name={field.name}
           required={!field.optional}
-          allowCustom={field.picker === 'university'}
-          options={field.picker === 'university' ? NIGERIAN_UNIVERSITIES : ENGINEERING_DISCIPLINES}
+          allowCustom={field.picker !== 'discipline' && field.picker !== 'country'}
+          options={field.picker === 'university' ? NIGERIAN_UNIVERSITIES : field.picker === 'location' ? NIGERIAN_LOCATIONS : field.picker === 'country' ? COUNTRIES : field.picker === 'city' ? citiesFor(draft.country || '') : ENGINEERING_DISCIPLINES}
           value={draft[field.name] || ''}
           onChange={value => update(field.name, value)}
           placeholder={field.placeholder}
           invalid={!!errors[field.name]}
           aria-describedby={errors[field.name] ? `${field.name}-error` : undefined}
-          pickMessage="Choose your course from the list."
+          openOnType={field.picker === 'location' || field.picker === 'city'}
+          pickMessage={field.picker === 'country' ? 'Choose a country from the list.' : 'Choose your course from the list.'}
         />
         {field.picker === 'university' && <span className="auth-field-hint">Not listed? Type your institution’s full name and pick “Use …”.</span>}
+        {(field.picker === 'location' || field.picker === 'city') && <span className="auth-field-hint">Not listed? Type your town and state, then pick “Use …”.</span>}
         {errors[field.name] && <span id={`${field.name}-error`} className="auth-field-error">{errors[field.name]}</span>}
       </div> : <label className="auth-field" key={field.name}>
         <span>{field.label}{field.optional ? ' (optional)' : ''}</span>
